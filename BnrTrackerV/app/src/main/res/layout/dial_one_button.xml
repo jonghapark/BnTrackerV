@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:background="@drawable/rounded_corners_3dp_white">
+
+        <TextView
+            android:id="@+id/dial_one_button_tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"
+            android:textColor="@color/dialTitle"
+            android:textSize="@dimen/textDefultLarge"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:id="@+id/dial_one_button_tv_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="40dp"
+            android:textColor="@color/dialMessage"
+            android:textSize="@dimen/textDefult"
+            android:gravity="center"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:layout_gravity="center_horizontal" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="@color/dialDivider" />
+
+        <Button
+            android:id="@+id/dial_one_button_bt_ok"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="확인"
+            android:background="@drawable/selector_rounded_corners_3dp_white_bottom"
+            android:textColor="@color/dialButtonText"
+            android:textSize="@dimen/textDefult" />
+    </LinearLayout>
+
+</LinearLayout>

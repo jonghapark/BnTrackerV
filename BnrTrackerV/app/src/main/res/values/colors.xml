@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#000000</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="lineRed">#e30000</color>
+
+    <color name="dialTitle">#484848</color>
+    <color name="dialMessage">#717171</color>
+    <color name="dialDivider">#d1d1d1</color>
+    <color name="dialButtonText">#484848</color>
+    <color name="whiteButtonPressed">#c7ebf3</color>
+    <color name="whiteTextPressed">#cccccc</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="semiTransparent">#99000000</color>
+    <color name="textDefault">#222222</color>
+    <color name="textDefaultLight">#7f7f7f</color>
+    <color name="textDefaultHint">#b6b6b6</color>
+    <color name="detaultBackground">#fafafa</color>
+
+    <color name="orange">#FE9A2E</color>
+    <color name="yellow">#FAE503</color>
+    <color name="blue">#0101DF</color>
+    <color name="green">#298A08</color>
+    <color name="red">#FF0000</color>
+    <color name="gray">#d1d1d1</color>
+    <color name="lightGray">#e8e8e8</color>
+
+    <color name="transparent_gray">#55888888</color>
+    <color name="transparent_red">#33FF1111</color>
+    <color name="transparent_green">#3311FF11</color>
+    <color name="transparent_blue">#331111FF</color>
+    <color name="transparent_white">#33FFFFFF</color>
+
+    <color name="important">#FFFF0000</color>
+    <color name="normal">#FF000088</color>
+    <color name="trivial">#FF885555</color>
+
+    <color name="tabBackground">#f4f4f4</color>
+    <color name="tabDefault">#8d8d8d</color>
+    <color name="tabPressed">#d95441</color>
+
+    <color name="remoteCircleBackground">#e9e9e9</color>
+    <color name="remoteText">#d95441</color>
+
+    <color name="introBackground">#f6f7f9</color>
+    <color name="introTitle">#d95441</color>
+    <color name="introContent">#646464</color>
+    <color name="introBtnBackgroundNever">#2c2c2c</color>
+    <color name="introBtnBackgroundOk">#d95441</color>
+
+    <color name="viewPressed">#22000000</color>
+    <color name="transparent">#00000000</color>
+    <color name="naviUnderLine">#d1d1d1</color>
+    <color name="defaultUnderLine">#d1d1d1</color>
+    <color name="indicatorGray">#cecece</color>
+</resources>

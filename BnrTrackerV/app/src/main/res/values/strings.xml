@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">witch</string>
+
+    <string name="loginError">올바른 계정정보를 입력해 주세요.</string>
+    <string name="connectBleGuide">오른쪽 상단에 블루투스 아이콘을 눌러 디바이스를 연결해주세요.</string>
+    <string name="bleUnauthorized">블루투스 허용을 하셔야 리모콘 사용이 가능합니다.</string>
+    <string name="alreadyConnected">이미 연결되어있습니다.</string>
+    <string name="permissionDenied">앱을 실행시키는데 필요한 권한이 거부 되었습니다. 설정에서 허용을 눌러주세요.</string>
+    <string name="searchDevice">디바이스 스캔</string>
+    <string name="cancel">취소</string>
+    <string name="reScan">다시 스캔</string>
+    <string name="connect">Connect</string>
+    <string name="target">Target</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="send">Send</string>
+    <string name="scan">Scan</string>
+    <string name="start">Start</string>
+    <string name="more">More</string>
+    <string name="choose_file">Choose File</string>
+    <string name="stop_scan">Stop Scan</string>
+    <string name="scanning">Scanning</string>
+    <string name="discovering">Discovering</string>
+    <string name="connecting">Connecting</string>
+    <string name="running_automation">Running Auto Pattern</string>
+    <string name="automation">Auto Pattern</string>
+    <string name="empty_list">This list is empty</string>
+    <string name="empty_function">There is no corresponding function for this Device</string>
+    <string name="red">Red</string>
+    <string name="green">Green</string>
+    <string name="blue">Blue</string>
+
+    <string name="device_class_audiovideo">Audio Video</string>
+    <string name="device_class_computer">Computer</string>
+    <string name="device_class_health">Health</string>
+    <string name="device_class_imaging">Imaging</string>
+    <string name="device_class_misc">Miscellaneous</string>
+    <string name="device_class_networking">Networking</string>
+    <string name="device_class_peripheral">Peripheral</string>
+    <string name="device_class_phone">Phone</string>
+    <string name="device_class_toy">Toy</string>
+    <string name="device_class_uncategorized">Uncategorized</string>
+    <string name="device_class_wearable">Wearable</string>
+</resources>

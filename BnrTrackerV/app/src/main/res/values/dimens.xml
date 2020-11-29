@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<dimen name="large_gutter">20dip</dimen>
+	<dimen name="default_gutter">10dip</dimen>
+	<dimen name="small_gutter">5dip</dimen>
+
+	<dimen name="home_btn_min_height">100dip</dimen>
+
+	<dimen name="large_font_size">32sp</dimen>
+	<dimen name="small_font_size">12sp</dimen>
+
+	<dimen name="top_btn_min_height">30dip</dimen>
+	<dimen name="top_btn_min_width">100dip</dimen>
+	<dimen name="navigation_icon_size">100dip</dimen>
+
+	<dimen name="textDefultLargeLargeLarge">33dp</dimen>
+	<dimen name="textDefultLargeLarge">20dp</dimen>
+	<dimen name="textDefultLarge">17dp</dimen>
+	<dimen name="textDefult">15dp</dimen>
+	<dimen name="textDefultSmall">13dp</dimen>
+	<dimen name="textDefultSmallSmall">11dp</dimen>
+</resources>
