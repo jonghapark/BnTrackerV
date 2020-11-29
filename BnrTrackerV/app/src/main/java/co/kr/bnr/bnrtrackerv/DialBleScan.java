@@ -133,6 +133,9 @@ public class DialBleScan extends AppCompatDialogFragment {
 
                                 //없는거만 넣는다
                                 if(!addedDeviceNameList.contains(device.getName()) && !scanDeviceList.contains(device) && device.getName() != null && device.getName().startsWith("OPBT") && !arrBleAddress.contains(device.getAddress())) {
+
+                                    CommonUtil.myLog("device: " + device.getName());
+                                    CommonUtil.myLog("device: " + device.getAddress());
                                     scanDeviceList.add(device);
                                     arrBleAddress.add(device.getAddress());
 

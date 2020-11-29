@@ -20,6 +20,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -77,6 +78,8 @@ public class ActMainBeacon extends AppCompatActivity {
 
     private ProgressDialog mDiscoveringDialog;
     private ProgressDialog mConnectDialog;
+
+
 
     private int mSuccess = 0;
     private int mFail    = 0;
@@ -269,6 +272,34 @@ public class ActMainBeacon extends AppCompatActivity {
 //        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
 //        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
     }
+    //QRCode Scanner
+    @OnClick(R.id.btnQRcode)
+    void onClickAddDevice2(View view) {
+        showFindDevice2();
+    }
+
+    //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
+    public void showFindDevice2() {
+        DialBleQRscan.newInstance("hello","message", new DialBleQRscan.MessageDialogListener() {
+            @Override
+            public void onDialogPositiveClick(DialogFragment dialog) {
+                System.out.println("hello");
+            }
+        });
+//                .setListener(deviceInfoList, new DialBleQRscan.Listener() {
+//            @Override
+//            public void onDeviceSelect(BluetoothDevice device) {
+//                DeviceInfo deviceInfo = new DeviceInfo(context);
+//                CommonUtil.myLog("device함수내부: " + device.getName());
+//                deviceInfo.mDevice = device;
+//                deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
+//                bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
+//                deviceInfoList.add(deviceInfo);
+//
+//                adapter.notifyDataSetChanged();
+//            }
+//        }).showDialog(getSupportFragmentManager());
+    }
 
     //기기추가
     @OnClick(R.id.btnAddDevice)
@@ -278,15 +309,18 @@ public class ActMainBeacon extends AppCompatActivity {
 
     //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
     public void showFindDevice() {
+
         DialBleScan.newInstance().setListener(deviceInfoList, new DialBleScan.Listener() {
             @Override
             public void onDeviceSelect(BluetoothDevice device) {
+                //device : F8:B4 ...
                 DeviceInfo deviceInfo = new DeviceInfo(context);
                 deviceInfo.mDevice = device;
                 deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
                 bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
                 deviceInfoList.add(deviceInfo);
                 CommonUtil.myLog("디바이스 골랐다1: " + device);
+
 
                 adapter.notifyDataSetChanged();
             }
