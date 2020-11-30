@@ -39,7 +39,7 @@
         android:layout_gravity="center"
         android:visibility="visible"/>
 
-    <com.blikoon.qrcodescanner.view.QrCodeFinderView
+    <co.kr.bnr.bnrtrackerv.view.QrCodeFinderView
         android:id="@+id/qr_code_view_finder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
