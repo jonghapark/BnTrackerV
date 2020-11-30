@@ -35,6 +35,7 @@ public class DialBleScan extends AppCompatDialogFragment {
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
     private Handler mHandler;
+    private String resultName;
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
@@ -169,7 +170,7 @@ public class DialBleScan extends AppCompatDialogFragment {
 
     ArrayList addedDeviceNameList = new ArrayList();
 
-    public DialBleScan setListener(ArrayList<DeviceInfo> deviceInfoList, Listener listener) {
+    public DialBleScan setListener(ArrayList<DeviceInfo> deviceInfoList , Listener listener) {
         this.listener = listener;
 
         for(DeviceInfo deviceInfo : deviceInfoList) {

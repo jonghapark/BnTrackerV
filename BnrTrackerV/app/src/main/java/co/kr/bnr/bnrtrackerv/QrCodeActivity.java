@@ -1,6 +1,7 @@
 package co.kr.bnr.bnrtrackerv;
 
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -16,6 +17,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -59,6 +62,8 @@ public class QrCodeActivity extends Activity implements Callback, OnClickListene
     private View mLlFlashLight;
     private final DecodeManager mDecodeManager = new DecodeManager();
 
+    private final int MY_PERMISSIONS_REQUEST_CAMERA=1001;
+
     private static final float BEEP_VOLUME = 0.10f;
     private static final long VIBRATE_DURATION = 200L;
     private MediaPlayer mMediaPlayer;
@@ -70,7 +75,7 @@ public class QrCodeActivity extends Activity implements Callback, OnClickListene
     private Executor mQrCodeExecutor;
     private Handler mHandler;
 
-    private final String GOT_RESULT = "com.blikoon.qrcodescanner.got_qr_scan_relult";
+    private final String GOT_RESULT = "QR_result";
     private final String ERROR_DECODING_IMAGE = "com.blikoon.qrcodescanner.error_decoding_image";
     private final String LOGTAG = "QRScannerQRCodeActivity";
     private Context mApplicationContext;
@@ -90,11 +95,50 @@ public class QrCodeActivity extends Activity implements Callback, OnClickListene
     public void onCreate(Bundle savedInstanceState) {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
+        int permssionCheck = ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA);
+
+        if (permssionCheck!= PackageManager.PERMISSION_GRANTED) {
+
+            Toast.makeText(this,"권한 승인이 필요합니다",Toast.LENGTH_LONG).show();
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.CAMERA)) {
+                Toast.makeText(this,"000부분 사용을 위해 카메라 권한이 필요합니다.",Toast.LENGTH_LONG).show();
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST_CAMERA);
+                Toast.makeText(this,"000부분 사용을 위해 카메라 권한이 필요합니다.",Toast.LENGTH_LONG).show();
+
+            }
+        }
+
+
+
         setContentView(R.layout.activity_qr_code);
         initView();
         initData();
         mApplicationContext = getApplicationContext();
 
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    Toast.makeText(this,"승인이 허가되어 있습니다.",Toast.LENGTH_LONG).show();
+
+                } else {
+                    Toast.makeText(this,"아직 승인받지 않았습니다.",Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+
+        }
     }
 
     private void checkPermission() {
@@ -349,7 +393,7 @@ public class QrCodeActivity extends Activity implements Callback, OnClickListene
         } else {
             //Got result from scanning QR Code with users camera
             Log.d(LOGTAG,"Got scan result from user loaded image :"+resultString);
-            Intent data = new Intent();
+            Intent data = new Intent(this, ActMainBeacon.class);
             data.putExtra(GOT_RESULT,resultString);
             setResult(Activity.RESULT_OK,data);
             finish();

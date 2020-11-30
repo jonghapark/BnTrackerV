@@ -18,6 +18,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.v4.app.DialogFragment;
@@ -69,20 +70,25 @@ public class ActMainBeacon extends AppCompatActivity {
 
     private final static String INFO_CONTENT = "the_information_body";
     private final static String RCV_ENABLED = "could_receive_data_if_enabled";
+    private final String GOT_RESULT = "QR_result";
+
 
     private final static int PAYLOAD_MAX = 20; // 90 bytes might be max
 
     private final static int LAUNCH_FUNCTION = 0x101;
     private final static int DISCOVERY_DIALOG = 1;
     private final static int CONNECT_DIALOG   = 2;
+    private static final long SCAN_PERIOD = 10000;
+
 
     private ProgressDialog mDiscoveringDialog;
     private ProgressDialog mConnectDialog;
 
 
-
+    private Handler mHandler;
     private int mSuccess = 0;
     private int mFail    = 0;
+    private String resultName = "initName";
 
     private Calendar mStartTime;
 
@@ -112,35 +118,89 @@ public class ActMainBeacon extends AppCompatActivity {
     }
 
     private void scanLeDevice(final boolean enable) {
+        CommonUtil.myLog("시작");
+//        if (enable) {
+//            mBluetoothAdapter.startLeScan(mLeScanCallback);
+//        }
         if (enable) {
+            // Stops scanning after a pre-defined scan period.
+//            mHandler.postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
+//                }
+//            }, SCAN_PERIOD);
             mBluetoothAdapter.startLeScan(mLeScanCallback);
         }
-        else {
-            mBluetoothAdapter.stopLeScan(mLeScanCallback);
-        }
+        else{
+                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+            }
+
     }
 
     // Device scan callback.
     private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() {
+
         @Override
         public void onLeScan(final BluetoothDevice device, int rssi, final byte[] scanRecord) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     //있는거만 넣는다
-                    DeviceInfo selectedDevice = getDevice(device.getName());
 
-                    if(selectedDevice == null) {
-                        //CommonUtil.myLog(deviceInfoList.size() + ": " + "없자나: " + device.getName() + "------" + CommonUtil.byteArrayToHexString(scanRecord));
-                        return;
+                    CommonUtil.myLog("설마 ? " +resultName +"/"+ device.getName());
+                    boolean isExist = false;
+                    int index = 0;
+                    for(DeviceInfo deviceInfo : deviceInfoList) {
+                        CommonUtil.myLog("디바이스 이름: " + deviceInfo.mDevice.getName());
+                        if(deviceInfo.mDevice.getName().equals(resultName)) {
+                            isExist = true;
+                            CommonUtil.myLog("존재 " + " 인덱스:" + index);
+                            break;
+                        }
+                            index += 1;
                     }
+                    //목록에 없는 디바이스는 연결
 
-                    String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
+                    if (resultName.equals(device.getName())) {
+                        if(!isExist){
+                        CommonUtil.myLog("연결시작 ? " + device.getName());
+                        DeviceInfo deviceInfo = new DeviceInfo(context);
 
-                    if(!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
-                        lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
-                        extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), device);
+                        deviceInfo.mDevice = device;
+                        deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
+                        bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
+                        onConnected(device);
+                        deviceInfoList.add(deviceInfo);
+                        resultName = "startConnection";
+                        adapter.notifyDataSetChanged();
+
+
+                        DeviceInfo selectedDevice = getDevice(device.getName());
+                        if (selectedDevice == null) {
+                            //CommonUtil.myLog(deviceInfoList.size() + ": " + "없자나: " + device.getName() + "------" + CommonUtil.byteArrayToHexString(scanRecord));
+                            return;
+                        }
+
+                        String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
+
+                        if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
+                            lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
+                            extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), device);
+                        }
+                    } else {
+                            resultName = "afterRemove";
+                            CommonUtil.myLog("이전 크기 ? " +deviceInfoList.size());
+                            deviceInfoList.remove(index);
+                            CommonUtil.myLog("이후 크기 ? " + deviceInfoList.size());
+                            adapter.notifyDataSetChanged();
+                            onDisconnected(device);
+
+
+                        }
                     }
+                    //이미 존재하는 디바이스면 연결 끊기
+
                 }
             });
         }
@@ -161,6 +221,7 @@ public class ActMainBeacon extends AppCompatActivity {
         startService(launch);
 
         initRecyclerView();
+        initBle();
 
         initScanning();
         scanLeDevice(true);
@@ -232,7 +293,7 @@ public class ActMainBeacon extends AppCompatActivity {
             startLocation();
 
             if(deviceInfoList.size() <= 0) {
-                showFindDevice();
+                //showFindDevice();
             }
         }
     }
@@ -257,6 +318,11 @@ public class ActMainBeacon extends AppCompatActivity {
             }
         });
     }
+    void initBle() {
+        mHandler = new Handler();
+        final BluetoothManager bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+    }
 
     void initRecyclerView() {
         linearLayoutManager = new LinearLayoutManager(this);
@@ -279,13 +345,16 @@ public class ActMainBeacon extends AppCompatActivity {
     }
 
     //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
-    public void showFindDevice2() {
-        DialBleQRscan.newInstance("hello","message", new DialBleQRscan.MessageDialogListener() {
-            @Override
-            public void onDialogPositiveClick(DialogFragment dialog) {
-                System.out.println("hello");
-            }
-        });
+    public void showFindDevice2(){
+        Intent intent = new Intent(getApplicationContext(), QrCodeActivity.class);
+        startActivityForResult(intent,1234);
+        //QrCodeActivity.launch(context);
+//        DialBleQRscan.newInstance("hello","message", new DialBleQRscan.MessageDialogListener() {
+//            @Override
+//            public void onDialogPositiveClick(DialogFragment dialog) {
+//                System.out.println("hello");
+//            }
+//        }).launch
 //                .setListener(deviceInfoList, new DialBleQRscan.Listener() {
 //            @Override
 //            public void onDeviceSelect(BluetoothDevice device) {
@@ -434,7 +503,6 @@ public class ActMainBeacon extends AppCompatActivity {
                 dismissConnect();
                 CommonUtil.myLog("connected to device, start discovery");
                 displayDiscovering();
-
                 onConnected(mDevice);
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 CommonUtil.myLog("connection state changed to disconnected in function picker");
@@ -632,6 +700,22 @@ public class ActMainBeacon extends AppCompatActivity {
         else if (requestCode == REQUEST_ENABLE_BT && resultCode == Activity.RESULT_CANCELED) {
             CommonUtil.myToast(context, getString(R.string.bleUnauthorized));
             return;
+        }
+
+        //QRcode 인식 완료시
+        if (requestCode == 1234) {
+            if (resultCode == RESULT_OK) {
+                resultName = data.getExtras().getString(GOT_RESULT);
+                CommonUtil.myLog("콜백 결과 : " + resultName);
+                mBluetoothAdapter.startLeScan(mLeScanCallback);
+              //  scanLeDevice(true);
+                //device : F8:B4 ...
+//                DeviceInfo deviceInfo = new DeviceInfo(context);
+//                deviceInfo.mDevice = resultName;
+//                deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
+//                bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
+//                deviceInfoList.add(deviceInfo);
+            }
         }
     }
 
