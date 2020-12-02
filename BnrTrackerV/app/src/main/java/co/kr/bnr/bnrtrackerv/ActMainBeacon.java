@@ -189,12 +189,14 @@ public class ActMainBeacon extends AppCompatActivity {
                             extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), device);
                         }
                     } else {
+                            CommonUtil.myLog("이미 존재하는 녀석 ? " + device.getName());
                             resultName = "afterRemove";
                             CommonUtil.myLog("이전 크기 ? " +deviceInfoList.size());
                             deviceInfoList.remove(index);
                             CommonUtil.myLog("이후 크기 ? " + deviceInfoList.size());
-                            adapter.notifyDataSetChanged();
+
                             onDisconnected(device);
+                            adapter.notifyDataSetChanged();
 
 
                         }
