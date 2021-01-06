@@ -92,10 +92,13 @@ public class ActMainBeacon extends AppCompatActivity {
 
     private Calendar mStartTime;
 
-    @Bind(R.id.recyclerView) RecyclerView recyclerView;
+    //@Bind(R.id.recyclerView) RecyclerView recyclerView;
     @Bind(R.id.tvLatitude) TextView tvLatitude;
     @Bind(R.id.tvLongitude) TextView tvLongitude;
     @Bind(R.id.tvAddress) TextView tvAddress;
+    @Bind(R.id.btnStart) TextView btnStart;
+    @Bind(R.id.btnEnd) TextView btnEnd;
+
 
     ArrayList<DeviceInfo> deviceInfoList = new ArrayList<>();
 
@@ -148,14 +151,14 @@ public class ActMainBeacon extends AppCompatActivity {
                 public void run() {
                     //있는거만 넣는다
 
-                    CommonUtil.myLog("설마 ? " +resultName +"/"+ device.getName());
+                    //CommonUtil.myLog("설마 ? " +resultName +"/"+ device.getName());
                     boolean isExist = false;
                     int index = 0;
                     for(DeviceInfo deviceInfo : deviceInfoList) {
-                        CommonUtil.myLog("디바이스 이름: " + deviceInfo.mDevice.getName());
+                        //CommonUtil.myLog("디바이스 이름: " + deviceInfo.mDevice.getName());
                         if(deviceInfo.mDevice.getName().equals(resultName)) {
                             isExist = true;
-                            CommonUtil.myLog("존재 " + " 인덱스:" + index);
+                            //CommonUtil.myLog("존재 " + " 인덱스:" + index);
                             break;
                         }
                             index += 1;
@@ -173,7 +176,10 @@ public class ActMainBeacon extends AppCompatActivity {
                         onConnected(device);
                         deviceInfoList.add(deviceInfo);
                         resultName = "startConnection";
-                        adapter.notifyDataSetChanged();
+                       // adapter.notifyDataSetChanged();
+                            sendCommand(Common.commandRemoveLoggingData, deviceInfo.mConn.mDevice);
+
+                            sendCommand(Common.commandSetLoggingMode, deviceInfo.mConn.mDevice);
 
 
                         DeviceInfo selectedDevice = getDevice(device.getName());
@@ -188,18 +194,102 @@ public class ActMainBeacon extends AppCompatActivity {
                             lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
                             extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), device);
                         }
-                    } else {
-                            CommonUtil.myLog("이미 존재하는 녀석 ? " + device.getName());
-                            resultName = "afterRemove";
-                            CommonUtil.myLog("이전 크기 ? " +deviceInfoList.size());
+                            resultName = "afterStart";
                             deviceInfoList.remove(index);
-                            CommonUtil.myLog("이후 크기 ? " + deviceInfoList.size());
-
                             onDisconnected(device);
-                            adapter.notifyDataSetChanged();
+                    }
+//                        else {
+//                            CommonUtil.myLog("이미 존재하는 녀석 ? " + device.getName());
+//                            resultName = "afterRemove";
+//                            CommonUtil.myLog("이전 크기 ? " +deviceInfoList.size());
+//                            deviceInfoList.remove(index);
+//                            CommonUtil.myLog("이후 크기 ? " + deviceInfoList.size());
+//
+//                            onDisconnected(device);
+//                           // adapter.notifyDataSetChanged();
+//                        }
+                    }
+                    //이미 존재하는 디바이스면 연결 끊기
 
+                }
+            });
+        }
+    };
 
+    // Device scan callback.
+    private BluetoothAdapter.LeScanCallback mLeScanCallback2 = new BluetoothAdapter.LeScanCallback() {
+
+        @Override
+        public void onLeScan(final BluetoothDevice device, int rssi, final byte[] scanRecord) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    //있는거만 넣는다
+                    //CommonUtil.myLog("설마 ? " +resultName +"/"+ device.getName());
+                    boolean isExist = false;
+                    int index = 0;
+                    for(DeviceInfo deviceInfo : deviceInfoList) {
+                        //CommonUtil.myLog("디바이스 이름: " + deviceInfo.mDevice.getName());
+                        if(deviceInfo.mDevice.getName().equals(resultName)) {
+                            isExist = true;
+                            //CommonUtil.myLog("존재 " + " 인덱스:" + index);
+                            break;
                         }
+                        index += 1;
+                    }
+                    //목록에 없는 디바이스는 연결
+                    if (resultName.equals(device.getName())) {
+                        if(!isExist){
+                            CommonUtil.myLog("연결시작 ? " + device.getName());
+                            resultName = "EndConnection";
+                            DeviceInfo deviceInfo = new DeviceInfo(context);
+
+                            deviceInfo.mDevice = device;
+                            deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
+                            bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
+                            onConnected(device);
+                            deviceInfoList.add(deviceInfo);
+
+                            // adapter.notifyDataSetChanged();
+                            sendCommand(Common.commandGetLoggingData, deviceInfo.mConn.mDevice);
+                         //   extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+
+                            String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
+                            if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
+                                lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
+                                extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+                            }
+                            resultName = "EndConnection";
+                            deviceInfoList.remove(index);
+                            onDisconnected(device);
+                        }
+                        else{
+                            // adapter.notifyDataSetChanged();
+                            //resultName = "EndConnection";
+                            DeviceInfo deviceInfo = new DeviceInfo(context);
+                            sendCommand(Common.commandGetLoggingData, deviceInfo.mConn.mDevice);
+                            //   extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+
+                            String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
+                            if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
+                                lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
+                                extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+                            }
+                            resultName = "EndConnection";
+                            deviceInfoList.remove(index);
+                            onDisconnected(device);
+                        }
+//                        else {
+//                            CommonUtil.myLog("이미 존재하는 녀석 ? " + device.getName());
+//                            resultName = "afterRemove";
+//                            CommonUtil.myLog("이전 크기 ? " +deviceInfoList.size());
+//                            deviceInfoList.remove(index);
+
+//                            CommonUtil.myLog("이후 크기 ? " + deviceInfoList.size());
+//
+//                            onDisconnected(device);
+//                           // adapter.notifyDataSetChanged();
+//                        }
                     }
                     //이미 존재하는 디바이스면 연결 끊기
 
@@ -222,7 +312,7 @@ public class ActMainBeacon extends AppCompatActivity {
         launch.putExtra(Bluebit.USE_FAKE, false);
         startService(launch);
 
-        initRecyclerView();
+        //initRecyclerView();
         initBle();
 
         initScanning();
@@ -326,20 +416,47 @@ public class ActMainBeacon extends AppCompatActivity {
         mBluetoothAdapter = bluetoothManager.getAdapter();
     }
 
-    void initRecyclerView() {
-        linearLayoutManager = new LinearLayoutManager(this);
-        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(linearLayoutManager);
-        recyclerView.setNestedScrollingEnabled(false);//스크롤뷰안에 리싸이클러뷰가 버벅일때 해결법
-        adapter = new AdapterConnectedDevice(this, deviceInfoList);
-        recyclerView.setAdapter(adapter);
-//        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
-//        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
-//        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
-//        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
-//        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
+//    void initRecyclerView() {
+//        linearLayoutManager = new LinearLayoutManager(this);
+//        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+//        recyclerView.setHasFixedSize(true);
+//        recyclerView.setLayoutManager(linearLayoutManager);
+//        recyclerView.setNestedScrollingEnabled(false);//스크롤뷰안에 리싸이클러뷰가 버벅일때 해결법
+//        adapter = new AdapterConnectedDevice(this, deviceInfoList);
+//        recyclerView.setAdapter(adapter);
+////        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
+////        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
+////        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
+////        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
+////        makeDataObject("7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D", "7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D".split(" "));
+//    }
+
+
+    //측정 시작 버튼
+    @OnClick(R.id.btnStart)
+    void onClickAddDevice3(View view) {
+        showFindDevice3();
     }
+
+    //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
+    public void showFindDevice3(){
+        Intent intent = new Intent(getApplicationContext(), QrCodeActivity.class);
+        startActivityForResult(intent,1234);
+    }
+
+    //측정 종료 버튼c
+    @OnClick(R.id.btnEnd)
+    void onClickAddDevice4(View view) {
+        showFindDevice4();
+    }
+
+    //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
+    public void showFindDevice4(){
+        Intent intent = new Intent(getApplicationContext(), QrCodeActivity.class);
+        startActivityForResult(intent,4321);
+    }
+
+
     //QRCode Scanner
     @OnClick(R.id.btnQRcode)
     void onClickAddDevice2(View view) {
@@ -393,7 +510,7 @@ public class ActMainBeacon extends AppCompatActivity {
                 CommonUtil.myLog("디바이스 골랐다1: " + device);
 
 
-                adapter.notifyDataSetChanged();
+                //adapter.notifyDataSetChanged();
             }
         }).showDialog(getSupportFragmentManager());
     }
@@ -427,7 +544,7 @@ public class ActMainBeacon extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                adapter.notifyDataSetChanged();
+               // adapter.notifyDataSetChanged();
             }
         });
         //setButtonStatus(false, true, tvConnectStatus1, tvStart1, mDevice1);
@@ -578,7 +695,7 @@ public class ActMainBeacon extends AppCompatActivity {
 
                     //듣기 허용한 다음 시간 세팅해준다
                     sendCommand(Common.commandSetCurrentTime, mDevice);
-                    sendCommand(Common.commandSetLoggingMode, mDevice);
+                   // sendCommand(Common.commandSetLoggingMode, mDevice);
 
                     //updateView(RCV_STATE, state);
                     CommonUtil.myLog("RCV_STATE1 : "+state + "/ " + CommonUtil.byteArrayToHexString(value));
@@ -588,6 +705,14 @@ public class ActMainBeacon extends AppCompatActivity {
                     //updateView(RCV_STATE, state);
                     CommonUtil.myLog("RCV_STATE2 : "+state + "/ " +  CommonUtil.byteArrayToHexString(value));
                 }
+
+                //시간 세팅하고왔다
+                else if (CommonUtil.byteArrayToHexString(value).equals(Common.commandSetLoggingMode)) {
+                    CommonUtil.myLog("시간 세팅하고왔다 RCV_STATE3 : " + CommonUtil.byteArrayToHexString(value));
+                    sendCommand(Common.commandSetLoggingMode, mDevice);
+                }
+
+
 //                //시간 세팅하고왔다
 //                else if (CommonUtil.byteArrayToHexString(value).equals("0100")) {
 //                    CommonUtil.myLog("시간 세팅하고왔다 RCV_STATE3 : " + CommonUtil.byteArrayToHexString(value));
@@ -710,7 +835,25 @@ public class ActMainBeacon extends AppCompatActivity {
                 resultName = data.getExtras().getString(GOT_RESULT);
                 CommonUtil.myLog("콜백 결과 : " + resultName);
                 mBluetoothAdapter.startLeScan(mLeScanCallback);
+                mBluetoothAdapter.stopLeScan(mLeScanCallback);
               //  scanLeDevice(true);
+                //device : F8:B4 ...
+//                DeviceInfo deviceInfo = new DeviceInfo(context);
+//                deviceInfo.mDevice = resultName;
+//                deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
+//                bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
+//                deviceInfoList.add(deviceInfo);
+            }
+        }
+
+        //QRcode 인식 완료시
+        if (requestCode == 4321) {
+            if (resultCode == RESULT_OK) {
+                resultName = data.getExtras().getString(GOT_RESULT);
+                CommonUtil.myLog("콜백 결과 : " + resultName);
+                mBluetoothAdapter.startLeScan(mLeScanCallback2);
+                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                //  scanLeDevice(true);
                 //device : F8:B4 ...
 //                DeviceInfo deviceInfo = new DeviceInfo(context);
 //                deviceInfo.mDevice = resultName;
@@ -952,12 +1095,12 @@ public class ActMainBeacon extends AppCompatActivity {
     //바이트 반위로 자른 배열로 데이터 객체 만들자
     void makeDataObject(String rawData, String[] arrSplitedRawdata, BluetoothDevice mDevice) {
         CommonUtil.myLog("---------결과배열: " + arrSplitedRawdata);
-//        for(int i=0; i<arrSplitedRawdata.length; i++) {
-//            CommonUtil.myLog("결과: " + arrSplitedRawdata[i]);
-//        }
-//        CommonUtil.myLog("-----------------");
+        for(int i=0; i<arrSplitedRawdata.length; i++) {
+            CommonUtil.myLog("결과: " + arrSplitedRawdata[i]);
+        }
+        CommonUtil.myLog("-----------------");
 
-        //enableNotification();
+//        enableNotification();
         if(mDevice == null) {
             CommonUtil.myLog("디바이스 널이야1");
             return;
@@ -1007,7 +1150,7 @@ public class ActMainBeacon extends AppCompatActivity {
                 public void run() {
                     CommonUtil.myLog("일분이 지나서 보냄" + dataReceive.toString());
                     sendToServer(dataReceive);
-                    adapter.notifyDataSetChanged();
+                   // adapter.notifyDataSetChanged();
                     //recyclerView1.scrollToPosition(deviceInfoList.size() - 1);
                 }
             });
@@ -1057,7 +1200,7 @@ public class ActMainBeacon extends AppCompatActivity {
                 break;
             }
         }
-        adapter.notifyDataSetChanged();
+       // adapter.notifyDataSetChanged();
     }
 
     public void getAddress() {
@@ -1075,7 +1218,7 @@ public class ActMainBeacon extends AppCompatActivity {
             String postalCode = addresses.get(0).getPostalCode();
             String knownName = addresses.get(0).getFeatureName(); // Only if available else return NULL
 
-            tvAddress.setText(address);
+            tvAddress.setText(address + "\n" + resultName);
         } catch (IOException e) {
             e.printStackTrace();
         }

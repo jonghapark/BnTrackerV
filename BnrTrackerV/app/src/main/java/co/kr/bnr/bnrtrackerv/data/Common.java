@@ -34,6 +34,14 @@ public class Common {
     public static String commandSetLoggingMode = "7E7E260001000000" + "01" + "7D7D";
     public static byte[] commandSetLoggingModeToByte = new java.math.BigInteger(commandSetLoggingMode, 16).toByteArray();
 
+    //로깅 데이터 삭제 - 측정시작 -> QR코드 입력시 사용
+    public static String commandRemoveLoggingData = "7E7E110000000000" + "00" + "7D7D";
+    public static byte[] commandRemoveLoggingDataToByte = new java.math.BigInteger(commandRemoveLoggingData, 16).toByteArray();
+
+    //로깅 데이터 요청 - 측정종료 -> QR코드 입력시 사용
+    public static String commandGetLoggingData = "7E7E030000000000" + "00" + "7D7D";
+    public static byte[] commandGetLoggingDataToByte = new java.math.BigInteger(commandGetLoggingData, 16).toByteArray();
+
     //들어오는 데이터 예시
     //7E 7E 01 B0 11 00 00 00 80 0B CC 0D 00 BC 67 BA 5D 00 00 00 00 00 00 00 00 7D 7D
     public static String L = "tracker";
