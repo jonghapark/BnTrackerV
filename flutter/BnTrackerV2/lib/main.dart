@@ -174,9 +174,20 @@ class _MyHomePageState extends State<MyHomePage> {
             //peripheral.
             setBLEState('connected');
             Stream<CharacteristicWithValue> characteristicUpdates;
-            characteristicUpdates = peripheral.monitorCharacteristic(
+            Future<Characteristic> values;
+            BigInt data = BigInt.parse('0x7E7E0100000000007D7D');
+            final writeData = Util.convertInt2Bytes(data, Endian.little, 10);
+            print('쓰기 시작');
+            values = peripheral.writeCharacteristic(
                 '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
-                '6e400003-b5a3-f393-e0a9-e50e24dcca9e');
+                '6e400003-b5a3-f393-e0a9-e50e24dcca9e',
+                Uint8List.fromList(writeData),
+                false);
+            // characteristicUpdates = peripheral.monitorCharacteristic(
+            //     '6e400001-b5a3-f393-e0a9-e50e24dcca9e',
+            //     '6e400003-b5a3-f393-e0a9-e50e24dcca9e');
+
+            print('결과 ' + characteristicUpdates.toString());
 
             //데이터 받는 리스너 핸들 변수
             StreamSubscription monitoringStreamSubscription;
@@ -303,4 +314,24 @@ class BleDeviceItem {
   AdvertisementData advertisementData;
   BleDeviceItem(
       this.deviceName, this.rssi, this.peripheral, this.advertisementData);
+}
+
+class Util {
+  static List<int> convertInt2Bytes(value, Endian order, int bytesSize) {
+    try {
+      final kMaxBytes = 8;
+      var bytes = Uint8List(kMaxBytes)
+        ..buffer.asByteData().setInt64(0, value, order);
+      List<int> intArray;
+      if (order == Endian.big) {
+        intArray = bytes.sublist(kMaxBytes - bytesSize, kMaxBytes).toList();
+      } else {
+        intArray = bytes.sublist(0, bytesSize).toList();
+      }
+      return intArray;
+    } catch (e) {
+      print('util convert error: $e');
+    }
+    return null;
+  }
 }

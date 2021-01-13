@@ -44,7 +44,7 @@ public class Api {
             params.put("tra_humidity", dataReceive.getHumidity());
             params.put("tra_lat", dataReceive.lat);
             params.put("tra_lon", dataReceive.lon);
-            params.put("de_number", "witch_" + dataReceive.deviceName);
+            params.put("de_number", "OPBT" + dataReceive.deviceName);
             params.put("tra_battery", dataReceive.getBattery());
 
             Util.myLog("sendData 파라미터>>"+params.toString());

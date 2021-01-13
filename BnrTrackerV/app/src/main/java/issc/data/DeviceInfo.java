@@ -170,12 +170,19 @@ public class DeviceInfo implements TransactionQueue.Consumer<GattTransaction> {
 
     public String getTemperature() {
         if(temperature.isEmpty()) return "";
-        return String.format("%.2f", CommonUtil.hexToDecimal(temperature) * 0.01);//"" + CommonUtil.hexToDecimal(temperature) * 0.01;
+
+        Long i = Long.parseLong(temperature, 16);
+        Float f = Float.intBitsToFloat(i.intValue());
+        return String.format("%.2f", f);
+        //"" + CommonUtil.hexToDecimal(temperature) * 0.01;
     }
 
     public String getHumidity() {
         if(humidity.isEmpty()) return "";
-        return String.format("%.2f", CommonUtil.hexToDecimal(humidity) * 0.01);
+        Long i = Long.parseLong(humidity, 16);
+        Float f = Float.intBitsToFloat(i.intValue());
+        return String.format("%.2f", f);
+        //return String.format("%.2f", Long.parseLong(humidity, 16));
     }
 
     public String getTime() {

@@ -115,7 +115,9 @@ public class CommonUtil {
 
 	public static String getDateTimeToHexa() {
 		Calendar mCalendar = Calendar.getInstance();
-		TimeZone gmtTime =  TimeZone.getTimeZone(TimeZone.getDefault().getDisplayName());
+		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+		//Locale.setDefault(Locale.KOREA);
+		TimeZone gmtTime =  TimeZone.getTimeZone("Asia/Seoul");
 		mCalendar.setTimeZone(gmtTime);
 		final Date date = mCalendar.getTime();
 		return Long.toHexString(date.getTime()/1000);

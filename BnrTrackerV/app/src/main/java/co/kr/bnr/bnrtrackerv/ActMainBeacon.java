@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -77,7 +78,7 @@ public class ActMainBeacon extends AppCompatActivity {
 
     private final static int LAUNCH_FUNCTION = 0x101;
     private final static int DISCOVERY_DIALOG = 1;
-    private final static int CONNECT_DIALOG   = 2;
+    private final static int CONNECT_DIALOG = 2;
     private static final long SCAN_PERIOD = 10000;
 
 
@@ -87,17 +88,34 @@ public class ActMainBeacon extends AppCompatActivity {
 
     private Handler mHandler;
     private int mSuccess = 0;
-    private int mFail    = 0;
+    private int mFail = 0;
     private String resultName = "initName";
+    private String currentState = "start";
+    private String resultRowData = "";
+    private boolean isReceving = false;
 
     private Calendar mStartTime;
 
     //@Bind(R.id.recyclerView) RecyclerView recyclerView;
-    @Bind(R.id.tvLatitude) TextView tvLatitude;
-    @Bind(R.id.tvLongitude) TextView tvLongitude;
-    @Bind(R.id.tvAddress) TextView tvAddress;
-    @Bind(R.id.btnStart) TextView btnStart;
-    @Bind(R.id.btnEnd) TextView btnEnd;
+    @Bind(R.id.tvLatitude)
+    TextView tvLatitude;
+    @Bind(R.id.tvLongitude)
+    TextView tvLongitude;
+    @Bind(R.id.tvAddress)
+    TextView tvAddress;
+    @Bind(R.id.btnStart)
+    TextView btnStart;
+    @Bind(R.id.btnEnd)
+    TextView btnEnd;
+
+    @Bind(R.id.tvTemperature2)
+            TextView textTemp;
+    @Bind(R.id.tvHumidity2)
+            TextView textHumidity;
+    @Bind(R.id.tvDeviceName2)
+            TextView textDeviceName;
+    @Bind(R.id.textSendSever)
+            TextView textSend;
 
 
     ArrayList<DeviceInfo> deviceInfoList = new ArrayList<>();
@@ -110,7 +128,7 @@ public class ActMainBeacon extends AppCompatActivity {
     //GPSTracker gps;
     private LocationGooglePlayServicesProvider provider;
     public static final int RESULTCODE_SET_GPS = 1;
-    String lat ="", lon ="";
+    String lat = "", lon = "";
 
     //비콘용
     private BluetoothAdapter mBluetoothAdapter;
@@ -134,10 +152,9 @@ public class ActMainBeacon extends AppCompatActivity {
 //                }
 //            }, SCAN_PERIOD);
             mBluetoothAdapter.startLeScan(mLeScanCallback);
+        } else {
+            mBluetoothAdapter.stopLeScan(mLeScanCallback);
         }
-        else{
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
-            }
 
     }
 
@@ -154,50 +171,71 @@ public class ActMainBeacon extends AppCompatActivity {
                     //CommonUtil.myLog("설마 ? " +resultName +"/"+ device.getName());
                     boolean isExist = false;
                     int index = 0;
-                    for(DeviceInfo deviceInfo : deviceInfoList) {
+                    for (DeviceInfo deviceInfo : deviceInfoList) {
                         //CommonUtil.myLog("디바이스 이름: " + deviceInfo.mDevice.getName());
-                        if(deviceInfo.mDevice.getName().equals(resultName)) {
+                        if (deviceInfo.mDevice.getName().equals(resultName)) {
                             isExist = true;
                             //CommonUtil.myLog("존재 " + " 인덱스:" + index);
                             break;
                         }
-                            index += 1;
+                        index += 1;
                     }
                     //목록에 없는 디바이스는 연결
 
                     if (resultName.equals(device.getName())) {
-                        if(!isExist){
-                        CommonUtil.myLog("연결시작 ? " + device.getName());
-                        DeviceInfo deviceInfo = new DeviceInfo(context);
+                        if (!isExist) {
+                            CommonUtil.myLog("연결시작 ? " + device.getName());
+                            DeviceInfo deviceInfo = new DeviceInfo(context);
 
-                        deviceInfo.mDevice = device;
-                        deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
-                        bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
-                        onConnected(device);
-                        deviceInfoList.add(deviceInfo);
-                        resultName = "startConnection";
-                       // adapter.notifyDataSetChanged();
-                            sendCommand(Common.commandRemoveLoggingData, deviceInfo.mConn.mDevice);
+                            deviceInfo.mDevice = device;
+                            deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
+                            bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
+                            onConnected(device);
+                            deviceInfoList.add(deviceInfo);
+                            resultName = "startConnection";
+                            if(CommonUtil.bytesToHex(scanRecord).startsWith("020106")){
+                                String tmpStr = CommonUtil.bytesToHex(scanRecord);
+                                String temper ="";
+                                String humi = "";
 
-                            sendCommand(Common.commandSetLoggingMode, deviceInfo.mConn.mDevice);
+                                temper = tmpStr.substring(20);
+                                temper = temper.substring(0,4);
+                                temper += temper.substring(0,2);
+                                temper = temper.substring(2,6);
+
+                                humi = tmpStr.substring(24);
+                                humi = humi.substring(0,4);
+                                humi += humi.substring(0,2);
+                                humi = humi.substring(2,6);
+                                CommonUtil.myLog("beaconDate : " + CommonUtil.bytesToHex(scanRecord));
+                                textTemp.setText(String.format("%.2f" , CommonUtil.hexToDecimal(temper) * 0.01) + "°C");
+                                textHumidity.setText(String.format("%.2f" ,CommonUtil.hexToDecimal(humi) * 0.01) + "%");
+                                textDeviceName.setText(device.getName() + " 측정 시작");
+                                textSend.setText("저장 모드로 전환되었습니다.");
+                            }
+                            // adapter.notifyDataSetChanged();
+                            // sendCommand(Common.commandRemoveLoggingData, deviceInfo.mConn.mDevice);
+                            //sendCommand(Common.commandRemoveLoggingData, deviceInfo.mConn.mDevice);
+
+                            //sendCommand(Common.commandSetLoggingMode, deviceInfo.mConn.mDevice);
 
 
-                        DeviceInfo selectedDevice = getDevice(device.getName());
-                        if (selectedDevice == null) {
-                            //CommonUtil.myLog(deviceInfoList.size() + ": " + "없자나: " + device.getName() + "------" + CommonUtil.byteArrayToHexString(scanRecord));
-                            return;
-                        }
+                            DeviceInfo selectedDevice = getDevice(device.getName());
+                            if (selectedDevice == null) {
+                                //CommonUtil.myLog(deviceInfoList.size() + ": " + "없자나: " + device.getName() + "------" + CommonUtil.byteArrayToHexString(scanRecord));
+                                return;
+                            }
 
-                        String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
+                            String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
 
-                        if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
-                            lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
-                            extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), device);
-                        }
+//                            if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
+//                                lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
+//                                extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), device);
+//                            }
                             resultName = "afterStart";
-                            deviceInfoList.remove(index);
-                            onDisconnected(device);
-                    }
+//                            deviceInfoList.remove(index);
+//                            onDisconnected(device);
+                        }
 //                        else {
 //                            CommonUtil.myLog("이미 존재하는 녀석 ? " + device.getName());
 //                            resultName = "afterRemove";
@@ -228,18 +266,18 @@ public class ActMainBeacon extends AppCompatActivity {
                     //CommonUtil.myLog("설마 ? " +resultName +"/"+ device.getName());
                     boolean isExist = false;
                     int index = 0;
-                    for(DeviceInfo deviceInfo : deviceInfoList) {
+                    for (DeviceInfo deviceInfo : deviceInfoList) {
                         //CommonUtil.myLog("디바이스 이름: " + deviceInfo.mDevice.getName());
-                        if(deviceInfo.mDevice.getName().equals(resultName)) {
+                        if (deviceInfo.mDevice.getName().equals(resultName)) {
                             isExist = true;
-                            //CommonUtil.myLog("존재 " + " 인덱스:" + index);
+                            CommonUtil.myLog("존재 " + " 인덱스:" + index);
                             break;
                         }
                         index += 1;
                     }
                     //목록에 없는 디바이스는 연결
                     if (resultName.equals(device.getName())) {
-                        if(!isExist){
+                        if (!isExist) {
                             CommonUtil.myLog("연결시작 ? " + device.getName());
                             resultName = "EndConnection";
                             DeviceInfo deviceInfo = new DeviceInfo(context);
@@ -250,34 +288,73 @@ public class ActMainBeacon extends AppCompatActivity {
                             onConnected(device);
                             deviceInfoList.add(deviceInfo);
 
+                            if(CommonUtil.bytesToHex(scanRecord).startsWith("020106")){
+                                String tmpStr = CommonUtil.bytesToHex(scanRecord);
+                                String temper ="";
+                                String humi = "";
+
+                                temper = tmpStr.substring(20);
+                                temper = temper.substring(0,4);
+                                temper += temper.substring(0,2);
+                                temper = temper.substring(2,6);
+
+                                humi = tmpStr.substring(24);
+                                humi = humi.substring(0,4);
+                                humi += humi.substring(0,2);
+                                humi = humi.substring(2,6);
+                                CommonUtil.myLog("beaconDate : " + CommonUtil.bytesToHex(scanRecord));
+                                textTemp.setText(String.format("%.2f" , CommonUtil.hexToDecimal(temper) * 0.01) + "°C");
+                                textHumidity.setText(String.format("%.2f" ,CommonUtil.hexToDecimal(humi) * 0.01) + "%");
+                                textDeviceName.setText(device.getName()+ " 측정 종료");
+                            }
+
+
                             // adapter.notifyDataSetChanged();
-                            sendCommand(Common.commandGetLoggingData, deviceInfo.mConn.mDevice);
-                         //   extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+                            //sendCommand(Common.commandGetLoggingData, deviceInfo.mConn.mDevice);
+                           // extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
 
                             String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
-                            if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
-                                lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
-                                extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
-                            }
+//                            if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
+//                                lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
+//                                extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+//                            }
                             resultName = "EndConnection";
-                            deviceInfoList.remove(index);
-                            onDisconnected(device);
-                        }
-                        else{
+//                            deviceInfoList.remove(index);
+//                            onDisconnected(device);
+                        } else {
                             // adapter.notifyDataSetChanged();
                             //resultName = "EndConnection";
                             DeviceInfo deviceInfo = new DeviceInfo(context);
-                            sendCommand(Common.commandGetLoggingData, deviceInfo.mConn.mDevice);
-                            //   extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+                            sendCommand(Common.commandGetLoggingData, device);
+                           // extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
 
                             String currentTime = Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm");
-                            if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
-                                lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
-                                extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+//                            if (!lastSendTimeMap.containsKey(device.getName()) || !lastSendTimeMap.get(device.getName()).equals(currentTime)) {
+//                                lastSendTimeMap.put(device.getName(), Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"));
+//                                extractDataFromRawData(CommonUtil.byteArrayToHexString(scanRecord), deviceInfo.mConn.mDevice);
+//                            }
+                            if(CommonUtil.bytesToHex(scanRecord).startsWith("020106")){
+                                String tmpStr = CommonUtil.bytesToHex(scanRecord);
+                                String temper ="";
+                                String humi = "";
+
+                                temper = tmpStr.substring(20);
+                                temper = temper.substring(0,4);
+                                temper += temper.substring(0,2);
+                                temper = temper.substring(2,6);
+
+                                humi = tmpStr.substring(24);
+                                humi = humi.substring(0,4);
+                                humi += humi.substring(0,2);
+                                humi = humi.substring(2,6);
+                                CommonUtil.myLog("beaconDate : " + CommonUtil.bytesToHex(scanRecord));
+                                textTemp.setText(String.format("%.2f" , CommonUtil.hexToDecimal(temper) * 0.01) + "°C");
+                                textHumidity.setText(String.format("%.2f" ,CommonUtil.hexToDecimal(humi) * 0.01) + "%");
+                                textDeviceName.setText(device.getName()+ " 측정 종");
                             }
                             resultName = "EndConnection";
-                            deviceInfoList.remove(index);
-                            onDisconnected(device);
+//                            deviceInfoList.remove(index);
+//                            onDisconnected(device);
                         }
 //                        else {
 //                            CommonUtil.myLog("이미 존재하는 녀석 ? " + device.getName());
@@ -316,7 +393,7 @@ public class ActMainBeacon extends AppCompatActivity {
         initBle();
 
         initScanning();
-        scanLeDevice(true);
+       // scanLeDevice(true);
 
         CommonUtil.myLog("시간: " + CommonUtil.getDateTimeToHexa());
         CommonUtil.myLog("새함수: " + CommonUtil.byteArrayToHexString(CommonUtil.hexStringToByteArray(CommonUtil.getDateTimeToHexa())));
@@ -326,10 +403,9 @@ public class ActMainBeacon extends AppCompatActivity {
         BeaconReferenceApplication application = ((BeaconReferenceApplication) this.getApplicationContext());
         if (BeaconManager.getInstanceForApplication(this).getMonitoredRegions().size() > 0) {
             application.disableMonitoring();
-            ((Button)findViewById(R.id.enableButton)).setText("Re-Enable Monitoring");
-        }
-        else {
-            ((Button)findViewById(R.id.enableButton)).setText("Disable Monitoring");
+            ((Button) findViewById(R.id.enableButton)).setText("Re-Enable Monitoring");
+        } else {
+            ((Button) findViewById(R.id.enableButton)).setText("Disable Monitoring");
             application.enableMonitoring();
         }
     }
@@ -355,9 +431,12 @@ public class ActMainBeacon extends AppCompatActivity {
         initLocationTracking(this);
     }
 
+
+
+
     //출발지 세팅
-    void initLocationTracking(Context context){
-        if(!SmartLocation.with(context).location().state().locationServicesEnabled() || !SmartLocation.with(context).location().state().isAnyProviderAvailable()){
+    void initLocationTracking(Context context) {
+        if (!SmartLocation.with(context).location().state().locationServicesEnabled() || !SmartLocation.with(context).location().state().isAnyProviderAvailable()) {
             AlertDialog.Builder alertDialog = new AlertDialog.Builder(context);
 
             alertDialog.setTitle("GPS 사용유무셋팅");
@@ -365,7 +444,7 @@ public class ActMainBeacon extends AppCompatActivity {
 
             // OK 를 누르게 되면 설정창으로 이동합니다.
             alertDialog.setPositiveButton("Settings", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog,int which) {
+                public void onClick(DialogInterface dialog, int which) {
                     Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                     startActivityForResult(intent, RESULTCODE_SET_GPS);
                 }
@@ -379,12 +458,11 @@ public class ActMainBeacon extends AppCompatActivity {
             });
 
             alertDialog.show();
-        }
-        else {
+        } else {
             Util.myLog("모든 권한 통과");
             startLocation();
 
-            if(deviceInfoList.size() <= 0) {
+            if (deviceInfoList.size() <= 0) {
                 //showFindDevice();
             }
         }
@@ -410,6 +488,7 @@ public class ActMainBeacon extends AppCompatActivity {
             }
         });
     }
+
     void initBle() {
         mHandler = new Handler();
         final BluetoothManager bluetoothManager = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -439,21 +518,24 @@ public class ActMainBeacon extends AppCompatActivity {
     }
 
     //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
-    public void showFindDevice3(){
+    public void showFindDevice3() {
+        deviceInfoList.clear();
         Intent intent = new Intent(getApplicationContext(), QrCodeActivity.class);
-        startActivityForResult(intent,1234);
+        startActivityForResult(intent, 1234);
     }
 
     //측정 종료 버튼c
     @OnClick(R.id.btnEnd)
     void onClickAddDevice4(View view) {
+        deviceInfoList.clear();
+        textSend.setText("데이터 전송중");
         showFindDevice4();
     }
 
     //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
-    public void showFindDevice4(){
+    public void showFindDevice4() {
         Intent intent = new Intent(getApplicationContext(), QrCodeActivity.class);
-        startActivityForResult(intent,4321);
+        startActivityForResult(intent, 4321);
     }
 
 
@@ -464,9 +546,9 @@ public class ActMainBeacon extends AppCompatActivity {
     }
 
     //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
-    public void showFindDevice2(){
+    public void showFindDevice2() {
         Intent intent = new Intent(getApplicationContext(), QrCodeActivity.class);
-        startActivityForResult(intent,1234);
+        startActivityForResult(intent, 1234);
         //QrCodeActivity.launch(context);
 //        DialBleQRscan.newInstance("hello","message", new DialBleQRscan.MessageDialogListener() {
 //            @Override
@@ -516,18 +598,19 @@ public class ActMainBeacon extends AppCompatActivity {
     }
 
     public void sendCommand(String command, BluetoothDevice mDevice) {
-        if(mDevice == null) {
+        if (mDevice == null) {
             CommonUtil.myLog("sendCommand : 디바이스가 널이네?");
             return;
         }
         CommonUtil.myLog("sendCommand : 디바이스가 널아니다!!" + mDevice.getName());
         //CharSequence cs = "0271100000008103";
         msgShow("send", command, mDevice);
-        write(command, mDevice);//TODO제거해
+        write(command, mDevice);
+        //TODO제거해
     }
 
     private void onConnected(BluetoothDevice mDevice) {
-        if(mDevice == null) {
+        if (mDevice == null) {
             //showFindDevice();
             CommonUtil.myLog("onConnected : 디바이스가 널이네?");
             return;
@@ -536,7 +619,10 @@ public class ActMainBeacon extends AppCompatActivity {
         List<GattService> list = null;
 
         DeviceInfo selectedDevice = getDevice(mDevice.getName());
-        if(selectedDevice == null) {CommonUtil.myLog("onConnected : 디바이스가 널이네?"); return;}
+        if (selectedDevice == null) {
+            CommonUtil.myLog("onConnected : 디바이스가 널이네?");
+            return;
+        }
         selectedDevice.mService.getServices(mDevice);
         selectedDevice.isBeaconMode = false;
         selectedDevice.isDeviceConnected = true;
@@ -544,7 +630,7 @@ public class ActMainBeacon extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-               // adapter.notifyDataSetChanged();
+                // adapter.notifyDataSetChanged();
             }
         });
         //setButtonStatus(false, true, tvConnectStatus1, tvStart1, mDevice1);
@@ -557,7 +643,7 @@ public class ActMainBeacon extends AppCompatActivity {
     }
 
     private void onDiscovered(BluetoothDevice mDevice) {
-        if(mDevice == null) {
+        if (mDevice == null) {
             CommonUtil.myLog("onDiscovered : 없어디바이스");
             //showFindDevice();
             return;
@@ -571,14 +657,17 @@ public class ActMainBeacon extends AppCompatActivity {
 //        }
 
         DeviceInfo selectedDevice = getDevice(mDevice.getName());
-        if(selectedDevice == null) {CommonUtil.myLog("onDiscovered : 디바이스가 널이네?"); return;}
+        if (selectedDevice == null) {
+            CommonUtil.myLog("onDiscovered : 디바이스가 널이네?");
+            return;
+        }
 
         GattService proprietary = selectedDevice.mService.getService(mDevice, UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e"));
         selectedDevice.mService.getService(mDevice, UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e"));
         selectedDevice.mTransTx = proprietary.getCharacteristic(UUID.fromString("6e400003-b5a3-f393-e0a9-e50e24dcca9e"));
         selectedDevice.mTransRx = proprietary.getCharacteristic(UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e"));
         CommonUtil.myLog(String.format("found Tx:%b, Rx:%b", selectedDevice.mTransTx != null, selectedDevice.mTransRx != null));
-        for(GattDescriptor descriptor : selectedDevice.mTransTx.getDescriptors()) {
+        for (GattDescriptor descriptor : selectedDevice.mTransTx.getDescriptors()) {
             //mService.readDescriptor(descriptor);
             CommonUtil.myLog("디스크립터: " + descriptor.getUuid() + "/ " + descriptor.getValue());
         }
@@ -598,6 +687,7 @@ public class ActMainBeacon extends AppCompatActivity {
 
     class GattListener extends Gatt.ListenerHelper {
         BluetoothDevice mDevice;
+
         GattListener(BluetoothDevice mDevice) {
             super("ActMain");
             this.mDevice = mDevice;
@@ -605,6 +695,7 @@ public class ActMainBeacon extends AppCompatActivity {
 
         @Override
         public void onServicesDiscovered(Gatt gatt, int status) {
+            CommonUtil.myLog("onServices Discovered ! !");
             dismissDiscovery();
             onDiscovered(mDevice);
         }
@@ -613,7 +704,7 @@ public class ActMainBeacon extends AppCompatActivity {
         public void onConnectionStateChange(Gatt gatt, int status, int newState) {
             CommonUtil.myLog(": mDevice: " + mDevice + ": newState: " + newState);
             //이거 콜백이라서 없으면 안되는 부분이다
-            if(mDevice == null) {
+            if (mDevice == null) {
                 CommonUtil.myLog("There is no Gatt to be used, skip1");
                 return;
             }
@@ -630,32 +721,37 @@ public class ActMainBeacon extends AppCompatActivity {
             }
         }
 
+
         @Override
         public void onCharacteristicRead(Gatt gatt, GattCharacteristic charac, int status) {
-            CommonUtil.myLog("리드드드드 : "+charac);//여기가 진짜다
+            CommonUtil.myLog("리드드드드 : " + charac);//여기가 진짜다
             byte[] value = charac.getValue();
             for (int i = 0; i < value.length; i++) {
                 CommonUtil.myLog("[" + i + "]" + Byte.toString(value[i]));
             }
 
             DeviceInfo selectedDevice = getDevice(mDevice.getName());
-            if(selectedDevice == null) {CommonUtil.myLog("onDiscovered : 디바이스가 널이네?"); return;}
+            if (selectedDevice == null) {
+                CommonUtil.myLog("onDiscovered : 디바이스가 널이네?");
+                return;
+            }
 
             selectedDevice.mQueue.onConsumed();
         }
 
         @Override
         public void onCharacteristicChanged(Gatt gatt, GattCharacteristic chrc) {
-            CommonUtil.myLog("on chr changed : " + mDevice );
-//            if (chrc.getUuid().equals(Bluebit.CHR_ISSC_TRANS_TX)) {
-//                onReceived(chrc.getValue(), mDevice);
-//            }
+            //CommonUtil.myLog("on chr changed : " + mDevice);
+
+            if (chrc.getUuid().equals(Bluebit.CHR_ISSC_TRANS_TX)) {
+                onReceived(chrc.getValue(), mDevice);
+            }
         }
 
         @Override
         public void onCharacteristicWrite(Gatt gatt, GattCharacteristic charac, int status) {
             if (status == Gatt.GATT_SUCCESS) {
-                mSuccess +=charac.getValue().length;
+                mSuccess += charac.getValue().length;
             } else {
                 mFail += charac.getValue().length;
             }
@@ -665,22 +761,29 @@ public class ActMainBeacon extends AppCompatActivity {
                     mSuccess,
                     mFail);
 
-            if(mDevice == null) {Util.myLog("onCharacteristicWrite 끝");return;}
+            if (mDevice == null) {
+                Util.myLog("onCharacteristicWrite 끝");
+                return;
+            }
             Util.myLog("--------onCharacteristicWrite: " + s + "/" + mDevice);
             msgShow("wrote", s, mDevice);
 
             DeviceInfo selectedDevice = getDevice(mDevice.getName());
-            if(selectedDevice == null) {CommonUtil.myLog("onCharacteristicWrite : 디바이스가 널이네?"); return;}
+            if (selectedDevice == null) {
+                CommonUtil.myLog("onCharacteristicWrite : 디바이스가 널이네?");
+                return;
+            }
 
             selectedDevice.mQueue.onConsumed();
 
             if (selectedDevice.mQueue.size() == 0 && mStartTime != null) {
-                long elapse =  Calendar.getInstance().getTimeInMillis() - mStartTime.getTimeInMillis();
+                long elapse = Calendar.getInstance().getTimeInMillis() - mStartTime.getTimeInMillis();
                 msgShow("time", "spent " + (elapse / 1000) + " seconds", mDevice);
                 mStartTime = null;
             }
-            selectedDevice.mService.readCharacteristic(selectedDevice.mTransTx);
-
+            boolean result;
+            result = selectedDevice.mService.readCharacteristic(selectedDevice.mTransTx);
+            CommonUtil.myLog("Result : " + result);
             //updateView(CONSUME_TRANSACTION, null, mDevice1);
             CommonUtil.myLog("CONSUME_TRANSACTION");
         }
@@ -694,16 +797,22 @@ public class ActMainBeacon extends AppCompatActivity {
                     state.putBoolean(RCV_ENABLED, true);
 
                     //듣기 허용한 다음 시간 세팅해준다
-                    sendCommand(Common.commandSetCurrentTime, mDevice);
-                   // sendCommand(Common.commandSetLoggingMode, mDevice);
+                    //sendCommand(Common.commandSetCurrentTime, mDevice);
+                    if(currentState.equals("end"))
+                    sendCommand(Common.commandGetLoggingData, mDevice);
+                    else if(currentState.equals("start")){
+                        sendCommand(Common.commandRemoveLoggingData, mDevice);
+                    }
+//                     sendCommand(Common.commandSetLoggingMode, mDevice);
+
 
                     //updateView(RCV_STATE, state);
-                    CommonUtil.myLog("RCV_STATE1 : "+state + "/ " + CommonUtil.byteArrayToHexString(value));
+                    CommonUtil.myLog("RCV_STATE1 : " + state + "/ " + CommonUtil.byteArrayToHexString(value));
                 } else if (Arrays.equals(value, dsc.getConstantBytes(GattDescriptor.DISABLE_NOTIFICATION_VALUE))) {
                     Bundle state = new Bundle();
                     state.putBoolean(RCV_ENABLED, false);
                     //updateView(RCV_STATE, state);
-                    CommonUtil.myLog("RCV_STATE2 : "+state + "/ " +  CommonUtil.byteArrayToHexString(value));
+                    CommonUtil.myLog("RCV_STATE2 : " + state + "/ " + CommonUtil.byteArrayToHexString(value));
                 }
 
                 //시간 세팅하고왔다
@@ -732,18 +841,74 @@ public class ActMainBeacon extends AppCompatActivity {
 
     /**
      * Received data from remote when enabling Echo.
-     *
+     * <p>
      * Display the data and transfer back to device.
      */
     private void onReceived(byte[] data, BluetoothDevice mDevice) {
-        CommonUtil.myLog("리시브드 : "+CommonUtil.bytesToHex(data));//여기가 진짜다z
+        CommonUtil.myLog("리시브드 : " + CommonUtil.bytesToHex(data));//여기가 진짜다z
         Bundle msg = new Bundle();
         msg.putCharSequence(INFO_CONTENT, CommonUtil.bytesToHex(data));
+        boolean isEnd = false;
 
-        extractDataFromRawData(String.valueOf(CommonUtil.bytesToHex(data)), mDevice);
 
+      //  extractDataFromRawData(String.valueOf(CommonUtil.bytesToHex(data)), mDevice);드
+        //START 동작
+        // 로깅데이터 삭제 -> 시간 세팅 -> 로깅 모드
+        if(CommonUtil.bytesToHex(data).equals("7E7E1180000000007D7D")){
+            //CommonUtil.myLog("실행 11");
+            //getDevice(mDevice.getName()).mTransRx.setValue()
+            sendCommand(Common.commandSetCurrentTime, mDevice);
+            //sendCommand(Common.commandGetConfig, mDevice);
+        }
+
+        //시간세팅 이후 로깅모
+        else if(CommonUtil.bytesToHex(data).startsWith("7E7E2180")) {
+            sendCommand(Common.commandSetLoggingMode, mDevice);
+        }
+
+        else if(CommonUtil.bytesToHex(data).equals("7E7E2680000000007D7D")){
+            String tmpname = mDevice.getName();
+            onDisconnected(mDevice);
+            removeDevice(tmpname);
+        }
+        else if(CommonUtil.bytesToHex(data).endsWith("427D7D")){
+            isReceving = false;
+
+            isEnd = true;
+        }
+        else if(CommonUtil.bytesToHex(data).startsWith("7E7E0380")){
+            String str = CommonUtil.bytesToHex(data);
+            isReceving = true;
+            resultRowData = str.substring(str.indexOf("FFAA"),str.length());
+            return;
+
+        }
+        if(isReceving){
+            resultRowData += CommonUtil.bytesToHex(data);
+            //CommonUtil.myLog("rowData는요 : " + resultRowData);
+        }
+        if(isEnd){
+            String str = CommonUtil.bytesToHex(data);
+            resultRowData += str.substring(str.indexOf("FFAA"), str.length() - 4);
+            CommonUtil.myLog("최종 rowData는요 : " + resultRowData);
+            textDeviceName.setText(mDevice.getName() + " 측정 종료");
+            textSend.setText("총 " + String.valueOf(resultRowData.length()/48) + "개의 데이터를 전송했습니다.");
+
+
+
+            while(resultRowData.length() > 0) {
+                extractDataFromRawData(resultRowData.substring(0, 48), mDevice);
+                resultRowData = resultRowData.substring(48,resultRowData.length());
+                CommonUtil.myLog("현 rowData는요 : " + resultRowData);
+            }
+            if(mDevice != null)
+            {
+            String tmpname = mDevice.getName();
+            onDisconnected(mDevice);
+            removeDevice(tmpname);
+        }}
         //updateView(APPEND_MESSAGE, msg, mDevice);
-        CommonUtil.myLog("APPEND_MESSAGE : "+msg);//여기가 진짜다
+        //CommonUtil.myLog("APPEND_MESSAGE : " + msg);//여기가 진짜다
     }
 
     private void msgShow(CharSequence prefix, CharSequence cs, BluetoothDevice mDevice) {
@@ -758,14 +923,6 @@ public class ActMainBeacon extends AppCompatActivity {
         //extractDataFromRawData(sb.toString(), mDevice);
         //updateView(APPEND_MESSAGE, msg, mDevice);
         //CommonUtil.myLog("APPEND_MESSAGE : "+msg);
-    }
-
-    /**
-     * Write string to remote device.
-     */
-    private void write(CharSequence cs, BluetoothDevice mDevice) {
-        byte[] bytes = new java.math.BigInteger(cs.toString(), 16).toByteArray();
-        write(bytes, mDevice);
     }
 
     /**
@@ -786,8 +943,22 @@ public class ActMainBeacon extends AppCompatActivity {
             DeviceInfo selectedDevice = getDevice(mDevice.getName());
             if(selectedDevice == null) {CommonUtil.myLog("onCharacteristicWrite : 디바이스가 널이네?"); return;}
 
-            selectedDevice.transaction = new GattTransaction(selectedDevice.mTransRx, dst);
-            selectedDevice.mQueue.add(selectedDevice.transaction);
+
+            //1월 11일 임시
+//            selectedDevice.transaction = new GattTransaction(selectedDevice.mTransRx, dst);
+//            //setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+//            selectedDevice.mQueue.add(selectedDevice.transaction);
+
+            if(selectedDevice.mTransRx == null){
+                Log.d("BLE UUID가 없수다.",""
+                );
+            }else{
+                selectedDevice.mTransRx.setValue(bytes);
+                //selectedDevice.mTransRx.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                selectedDevice.mService.writeCharacteristic(selectedDevice.mTransRx);
+            }
+
+
             CommonUtil.myLog("하하1 :"+selectedDevice.mTransRx+"/"+selectedDevice.transaction + " / " + CommonUtil.byteArrayToHexString(bytes));
         }
     }
@@ -795,15 +966,22 @@ public class ActMainBeacon extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+    }
+    /**
+     * Write string to remote device.
+     */
+    private void write(CharSequence cs, BluetoothDevice mDevice) {
+        byte[] bytes = new java.math.BigInteger(cs.toString(), 16).toByteArray();
+        write(bytes, mDevice);
+    }
 
-        // this activity is invisible, remove listener
+    // this activity is invisible, remove listener
 //        if(mService != null) {
 //            mService.rmListener(mListener);
 //            mService = null;
 //        }
 //        unbindService(mConn);
-        stopService(new Intent(this, LeService.class));
-    }
+    //stopService(new Intent(this, LeService .class));
 
 //    @Override
 //    protected void onPause() {
@@ -829,13 +1007,24 @@ public class ActMainBeacon extends AppCompatActivity {
             return;
         }
 
+
         //QRcode 인식 완료시
         if (requestCode == 1234) {
             if (resultCode == RESULT_OK) {
+                textDeviceName.setText(getDevice(resultName) + " 측정 시작");
+                currentState = "start";
                 resultName = data.getExtras().getString(GOT_RESULT);
                 CommonUtil.myLog("콜백 결과 : " + resultName);
+
+                if(getDevice(resultName) == null)
                 mBluetoothAdapter.startLeScan(mLeScanCallback);
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+
+                else {
+                    CommonUtil.myLog("제거시");
+                    sendCommand(Common.commandRemoveLoggingData, getDevice(resultName).mDevice);
+                    getDevice(resultName).mService.readCharacteristic(getDevice(resultName).mTransTx);
+                }
+                //mBluetoothAdapter.stopLeScan(mLeScanCallback);
               //  scanLeDevice(true);
                 //device : F8:B4 ...
 //                DeviceInfo deviceInfo = new DeviceInfo(context);
@@ -848,11 +1037,21 @@ public class ActMainBeacon extends AppCompatActivity {
 
         //QRcode 인식 완료시
         if (requestCode == 4321) {
+
             if (resultCode == RESULT_OK) {
+                textDeviceName.setText(getDevice(resultName) + " 측정 종료");
+                currentState ="end";
                 resultName = data.getExtras().getString(GOT_RESULT);
                 CommonUtil.myLog("콜백 결과 : " + resultName);
-                mBluetoothAdapter.startLeScan(mLeScanCallback2);
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+
+                if(getDevice(resultName) == null)
+                    mBluetoothAdapter.startLeScan(mLeScanCallback2);
+
+                else {
+                    sendCommand(Common.commandGetLoggingData, getDevice(resultName).mDevice);
+                    getDevice(resultName).mService.readCharacteristic(getDevice(resultName).mTransTx);
+                }
+                //mBluetoothAdapter.stopLeScan(mLeScanCallback);
                 //  scanLeDevice(true);
                 //device : F8:B4 ...
 //                DeviceInfo deviceInfo = new DeviceInfo(context);
@@ -973,6 +1172,7 @@ public class ActMainBeacon extends AppCompatActivity {
 //            startActivityForResult(intent, LAUNCH_FUNCTION);
             //btnCommand.setEnabled(true);
 
+
 //            fragRemote.changeBtState();
 //
 //            if(fragInfo != null && fragInfo.isAdded())
@@ -1026,6 +1226,7 @@ public class ActMainBeacon extends AppCompatActivity {
             }
         });
     }
+
 
     public class SrvConnection implements ServiceConnection {
         BluetoothDevice mDevice;
@@ -1083,7 +1284,7 @@ public class ActMainBeacon extends AppCompatActivity {
             return;
         }
 
-        //CommonUtil.myLog("결과로우데이터: " + rawData);
+        //우CommonUtil.myLog("결과로우데이터: " + rawData);
         String[] arrSplitedRawdata = new String[rawData.length()/2];
 
         for(int i=0; i<rawData.length()/2; i++) {
@@ -1094,11 +1295,11 @@ public class ActMainBeacon extends AppCompatActivity {
 
     //바이트 반위로 자른 배열로 데이터 객체 만들자
     void makeDataObject(String rawData, String[] arrSplitedRawdata, BluetoothDevice mDevice) {
-        CommonUtil.myLog("---------결과배열: " + arrSplitedRawdata);
-        for(int i=0; i<arrSplitedRawdata.length; i++) {
-            CommonUtil.myLog("결과: " + arrSplitedRawdata[i]);
-        }
-        CommonUtil.myLog("-----------------");
+//        CommonUtil.myLog("---------결과배열: " + arrSplitedRawdata);
+//        for(int i=0; i<arrSplitedRawdata.length; i++) {
+//            CommonUtil.myLog("결과: " + arrSplitedRawdata[i]);
+//        }
+//        CommonUtil.myLog("-----------------");
 
 //        enableNotification();
         if(mDevice == null) {
@@ -1151,6 +1352,57 @@ public class ActMainBeacon extends AppCompatActivity {
                     CommonUtil.myLog("일분이 지나서 보냄" + dataReceive.toString());
                     sendToServer(dataReceive);
                    // adapter.notifyDataSetChanged();
+                    //recyclerView1.scrollToPosition(deviceInfoList.size() - 1);
+                }
+            });
+        }
+
+
+        //필터코드
+        if(rawData.startsWith("FFAA14000")) {
+            //DataReceive dataReceive = new DataReceive(arrSplitedRawdata);
+            //public DeviceInfo(boolean isHeaderType, String deviceStatus, String deviceName, String deviceId, String temperature, String humidity, String time, String battery, String lat, String lon, String rawData) {
+
+            final DeviceInfo dataReceive = new DeviceInfo(Util.makeStringFromCalendar(Calendar.getInstance(), "yyyy-MM-dd HH:mm"), false,
+                    "Storage",//deviceStatus
+                    mDevice == null ? "-" : mDevice.getName().replaceAll("OPBT", ""),//deviceName
+                    mDevice == null ? "-" : mDevice.getAddress(),//deviceId
+                    (arrSplitedRawdata[16] + arrSplitedRawdata[15] + arrSplitedRawdata[14] + arrSplitedRawdata[13]),//temperature
+                    (arrSplitedRawdata[23] + arrSplitedRawdata[22] + arrSplitedRawdata[21] + arrSplitedRawdata[20]),//humidity
+                    (arrSplitedRawdata[8] + arrSplitedRawdata[7] + arrSplitedRawdata[6] + arrSplitedRawdata[5]),//time
+                   "-1",//battery
+                    "" +lat,
+                    "" +lon,
+                    rawData);
+            if(mDevice == null) {
+                CommonUtil.myLog("디바이스 널이야2");
+                return;
+            }
+            //CommonUtil.myLog("여기들어오나요1");
+
+            DeviceInfo selectedDevice = getDevice(mDevice.getName());
+            if(selectedDevice == null) {CommonUtil.myLog("onServiceConnected : 디바이스가 널이네?"); return;}
+
+            selectedDevice.setDeviceReadInfo(false,
+                    "Storage",//deviceStatus
+                    mDevice == null ? "-" : mDevice.getName().replaceAll("OPBT", ""),//deviceName
+                    mDevice == null ? "-" : mDevice.getAddress(),//deviceId
+                    (arrSplitedRawdata[16] + arrSplitedRawdata[15] + arrSplitedRawdata[14] + arrSplitedRawdata[13]),//temperature
+                    (arrSplitedRawdata[23] + arrSplitedRawdata[22] + arrSplitedRawdata[21] + arrSplitedRawdata[20]),//humidity
+                    (arrSplitedRawdata[8] + arrSplitedRawdata[7] + arrSplitedRawdata[6] + arrSplitedRawdata[5]),//time
+                    "-1",//battery
+                    "" +lat,
+                    "" +lon,
+                    rawData);
+            //deviceInfoList1.add(dataReceive);
+            //CommonUtil.myLog("여기들어오나요2");
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    CommonUtil.myLog("일분이 지나서 보냄" + dataReceive.toString());
+                    sendToServer(dataReceive);
+                    // adapter.notifyDataSetChanged();
                     //recyclerView1.scrollToPosition(deviceInfoList.size() - 1);
                 }
             });
@@ -1218,7 +1470,7 @@ public class ActMainBeacon extends AppCompatActivity {
             String postalCode = addresses.get(0).getPostalCode();
             String knownName = addresses.get(0).getFeatureName(); // Only if available else return NULL
 
-            tvAddress.setText(address + "\n" + resultName);
+            tvAddress.setText(address);
         } catch (IOException e) {
             e.printStackTrace();
         }

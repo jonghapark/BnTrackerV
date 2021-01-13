@@ -188,6 +188,7 @@ public class LeService extends Service {
 
     public boolean readCharacteristic(GattCharacteristic chr) {
         CommonUtil.myLog("------readCharacteristic");
+        CommonUtil.myLog(String.valueOf(chr));
         return mGatt.readCharacteristic(chr);
     }
 
