@@ -23,7 +23,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
-import co.kr.bnr.bnrtrackerv.util.CommonUtil;
+import co.kr.bnr.opbt.util.CommonUtil;
 
 import issc.Bluebit;
 import issc.gatt.Gatt;

@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:padding="20dp"
-            android:text="Witch(위치)"
+            android:text="옵티로"
             android:textColor="@color/white"
             android:textSize="18dp" />
 

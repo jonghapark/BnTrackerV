@@ -2,22 +2,17 @@ package issc.data;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.NonNull;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import co.kr.bnr.bnrtrackerv.ActMainBeacon;
-import co.kr.bnr.bnrtrackerv.util.CommonUtil;
+import co.kr.bnr.opbt.ActMainBeacon;
+import co.kr.bnr.opbt.util.CommonUtil;
 import issc.gatt.GattCharacteristic;
 import issc.impl.GattTransaction;
 import issc.impl.LeService;
-import issc.util.Log;
 import issc.util.TransactionQueue;
 
 public class DeviceInfo implements TransactionQueue.Consumer<GattTransaction> {

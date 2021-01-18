@@ -22,7 +22,7 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 
-import co.kr.bnr.bnrtrackerv.R;
+import co.kr.bnr.opbt.R;
 
 import issc.Bluebit;
 import issc.gatt.GattCharacteristic;

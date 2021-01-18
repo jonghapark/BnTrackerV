@@ -30,7 +30,7 @@ dependencies:
   cupertino_icons: ^1.0.0
   flutter_ble_lib: ^2.2.3
   permission_handler: ^5.0.0+hotfix.3
-
+  http: ^0.12.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

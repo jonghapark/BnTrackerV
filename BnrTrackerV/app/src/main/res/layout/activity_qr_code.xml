@@ -39,7 +39,7 @@
         android:layout_gravity="center"
         android:visibility="visible"/>
 
-    <co.kr.bnr.bnrtrackerv.view.QrCodeFinderView
+    <co.kr.bnr.opbt.view.QrCodeFinderView
         android:id="@+id/qr_code_view_finder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
