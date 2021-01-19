@@ -9,6 +9,7 @@ import '../utils/util.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:async';
+import 'package:location/location.dart' as loc;
 // URL
 // 10.3.141.1:4000
 
@@ -21,21 +22,50 @@ class ScanscreenState extends State<Scanscreen> {
   BleManager _bleManager = BleManager();
   bool _isScanning = false;
   bool _connected = false;
+  String message = '-';
   Peripheral _curPeripheral; // 연결된 장치 변수
   List<BleDeviceItem> deviceList = []; // BLE 장치 리스트 변수
   String _statusText = ''; // BLE 상태 변수
-
+  loc.LocationData currentLocation;
   int dataSize = 0;
+  loc.Location location = new loc.Location();
 
   @override
   void initState() {
+    getCurrentLocation();
     init();
+    location.onLocationChanged.listen((loc.LocationData currentLocation) {
+      //print('여긴오냐' + '');
+      this.currentLocation = currentLocation;
+      // Use current location
+    });
     super.initState();
+  }
+
+  Future<Post> sendTest(Data data) async {
+    var client = http.Client();
+    try {
+      var uriResponse =
+          await client.post('http://175.126.232.236/_API/saveData.php', body: {
+        "isRegularData": "true",
+        "tra_datetime": data.time,
+        "tra_temp": data.temper,
+        "tra_humidity": data.humi,
+        "tra_lat": data.lat,
+        "tra_lon": data.lng,
+        "de_number": data.deviceName,
+        "tra_battery": data.battery,
+        "tra_impact": data.lex
+      });
+      // print(await client.get(uriResponse.body.['uri']));
+    } finally {
+      client.close();
+    }
   }
 
   Future<Post> sendPost() async {
     final response = await http.post(
-      'http://bnrtracker.dreammug.com/_API/saveData.php',
+      'http://175.126.232.236/_API/saveData.php',
       body: jsonEncode(
         {
           "isRegularData": "true",
@@ -44,18 +74,20 @@ class ScanscreenState extends State<Scanscreen> {
           "tra_humidity": "28",
           "tra_lat": "36.1523523",
           "tra_lon": "127.5339587",
-          "de_number": "test123",
-          "tra_battery": "null"
+          "de_number": "OPBT102814",
+          "tra_battery": "3.52"
         },
       ),
-      headers: {'Content-Type': "application/json"},
+      headers: {'content-type': "application/json"},
     );
     var responseResult;
     print(response.statusCode.toString());
     if (response.statusCode == 200) {
       // 만약 서버가 OK 응답을 반환하면, JSON을 파싱합니다.
       //print(utf8.decode(response.bodyBytes));
+
       responseResult = utf8.decode(response.bodyBytes);
+      print(responseResult.toString());
       return Post.fromJson(jsonDecode(response.body));
     } else {
       responseResult = utf8.decode(response.bodyBytes);
@@ -70,36 +102,53 @@ class ScanscreenState extends State<Scanscreen> {
 
   void startBtn() async {
     if (_curPeripheral.name != null) {
+      setState(() {
+        message = '측정 시작을 위한 세팅중입니다.';
+      });
       dataSize = 0;
       var values_tempreadDataResult = await _curPeripheral.readCharacteristic(
           'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
           '65ac0f6d-3a8c-4592-a20d-d1bd373d2f64');
       print('온도:' + values_tempreadDataResult.value.toString());
-      // 데이터 삭제 (검증 완료)
-      // var values_deleteData = await _curPeripheral.writeCharacteristic(
-      //     '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
-      //     '12a13958-d4a2-4808-9297-c8b277833ed8',
-      //     Uint8List.fromList([1]),
-      //     true);
-      // print('0 쓰기 결과: ' + values_deleteData.toString());
 
+      // 데이터 삭제 (검증 완료)
+      var values_deleteData = await _curPeripheral.writeCharacteristic(
+          '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
+          '12a13958-d4a2-4808-9297-c8b277833ed8',
+          Uint8List.fromList([1]),
+          true);
+      // print('0 쓰기 결과: ' + values_deleteData.toString());
       // 데이터 개수
       // 삭제 확인용 !
       var values_readDatasize = await _curPeripheral.readCharacteristic(
           '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
           '785b15a7-b67c-4e72-81a4-9904f73ef357');
-      print('data Size: ' + values_readDatasize.value.toString());
-      for (var i = 0; i < 4; i++) {
-        dataSize += int.parse(values_readDatasize.value[i].toString());
-      }
-      print('totalsize:' + dataSize.toString());
+      setState(() {
+        message = '기존 데이터를 삭제중입니다.';
+      });
+
+      var blob = ByteData.sublistView(values_readDatasize.value);
+      dataSize = blob.getUint16(0, Endian.little);
+
+      print('what? ' +
+          Util.convertInt2Bytes(dataSize, Endian.little, 4).toString());
+      // print(Uint8List. blob.getInt16(0,Endian.little).)
 
       //  시간정보
       //  시간쓰기
+
+      DateTime temp = DateTime.now();
       var values_settingTime = await _curPeripheral.writeCharacteristic(
           'cf08a8c2-485a-4e18-8fe9-018700449787',
           '74a75fa1-b998-454c-a3b2-a66f438c955a',
-          Uint8List.fromList([21, 01, 17, 17, 24, 32]),
+          Uint8List.fromList([
+            temp.year - 2000,
+            temp.month,
+            temp.day,
+            temp.hour,
+            temp.minute,
+            temp.second
+          ]),
           true);
 
       //  시간읽기
@@ -117,67 +166,137 @@ class ScanscreenState extends State<Scanscreen> {
       //  print('test : ' + values_testreadData.value.toString());
 
       //  외부 온도센서 활성화 - 왜 안될까
-      var values_setTempData = await _curPeripheral.readCharacteristic(
+      var values_setTempData = await _curPeripheral.writeCharacteristic(
           'cf08a8c2-485a-4e18-8fe9-018700449787',
-          '51186f4c-c8f9-4c67-ac1f-a33ba77eb76b');
+          '51186f4c-c8f9-4c67-ac1f-a33ba77eb76b',
+          Uint8List.fromList([1]),
+          false);
 
       //  데이터 읽기
       //  인덱스 설정
 
       //  print(Uint8List.fromList([2, 0]));
+      // 측정시작 명령어
+      await _curPeripheral.writeCharacteristic(
+          'cf08a8c2-485a-4e18-8fe9-018700449787',
+          '705ec125-966d-4275-bd80-a1b2a8bc28d6',
+          Uint8List.fromList([1]),
+          false);
 
       // //설정 종료
-      // await _curPeripheral.writeCharacteristic(
-      //     'cf08a8c2-485a-4e18-8fe9-018700449787',
-      //     'e371f072-24aa-40a2-9af8-1b030c0f2acb',
-      //     Uint8List.fromList([1]),
-      //     true);
+      await _curPeripheral.writeCharacteristic(
+          'cf08a8c2-485a-4e18-8fe9-018700449787',
+          'e371f072-24aa-40a2-9af8-1b030c0f2acb',
+          Uint8List.fromList([1]),
+          false);
 
-      // Uint8List temp = Uint8List.fromList(
-      //     [values_readDataResult.value[10], values_readDataResult.value[11]]);
-      // print('hex1:' +
-      //     int.parse(values_readDataResult.value[10].toString())
-      //         .toRadixString(16)
-      //         .toString());
-
-      // print('hex2:' +
-      //     int.parse(values_readDataResult.value[11].toString())
-      //         .toRadixString(16)
-      //         .toString());
-      // print('16짜리 : ' + temp.toString());
+      setState(() {
+        message = '측정중';
+      });
     }
   }
 
   void endBtn() async {
-    sendPost();
-    // for (var i = 0; i < dataSize; i++) {
-    //   if (dataSize <= 255) {
-    //     var values_setIndex = await _curPeripheral.writeCharacteristic(
-    //         '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
-    //         'c816ccd4-14d6-457c-8872-e0c1b1bfb1e0',
-    //         Uint8List.fromList([i, 0, 0, 0]),
-    //         true);
-    //     // sleep(const Duration(milliseconds: 80));
-    //     //인덱스 데이터 읽기
-    //     var values_readDataResult = await _curPeripheral.readCharacteristic(
-    //         '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
-    //         '764dcf6f-0d44-4144-945e-4922d47cc254');
-    //     print('data:' + values_readDataResult.value.toString());
+    // sendTest();
+    // 측정종료 명령어
+    setState(() {
+      message = '데이터를 읽어오고 있습니다.';
+    });
+    await _curPeripheral.writeCharacteristic(
+        'cf08a8c2-485a-4e18-8fe9-018700449787',
+        '705ec125-966d-4275-bd80-a1b2a8bc28d6',
+        Uint8List.fromList([0]),
+        false);
 
-    //     //print('is? ' + Uint8List.fromList([1, 0, 0, 0]).toString());
-    //   } else if (dataSize <= (255 + 255)) {
-    //     var values_setIndex = await _curPeripheral.writeCharacteristic(
-    //         '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
-    //         'c816ccd4-14d6-457c-8872-e0c1b1bfb1e0',
-    //         Uint8List.fromList([255, i, 0, 0]),
-    //         true);
-    //     //인덱스 데이터 읽기
-    //     var values_readDataResult = await _curPeripheral.readCharacteristic(
-    //         '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
-    //         '764dcf6f-0d44-4144-945e-4922d47cc254');
-    //     print('data:' + values_readDataResult.value.toString());
-    //   }
-    // }
+    var values_readDatasize = await _curPeripheral.readCharacteristic(
+        '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
+        '785b15a7-b67c-4e72-81a4-9904f73ef357');
+
+    var blob = ByteData.sublistView(values_readDatasize.value);
+    dataSize = blob.getUint16(0, Endian.little);
+    setState(() {
+      message = '데이터 전송중';
+    });
+    for (var i = 0; i < dataSize; i++) {
+      Data data = new Data();
+      DateTime datatime;
+      var values_setIndex = await _curPeripheral.writeCharacteristic(
+          '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
+          'c816ccd4-14d6-457c-8872-e0c1b1bfb1e0',
+          Uint8List.fromList(Util.convertInt2Bytes(i, Endian.little, 4)),
+          true);
+      //sleep(const Duration(milliseconds: 80));
+      //인덱스 데이터 읽기
+      var values_readDataResult = await _curPeripheral.readCharacteristic(
+          '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
+          '764dcf6f-0d44-4144-945e-4922d47cc254');
+      //print('data:' + values_readDataResult.value.toString());
+      datatime = DateTime(
+          ByteData.sublistView(values_readDataResult.value.sublist(4, 5))
+                  .getUint8(0) +
+              2000,
+          ByteData.sublistView(values_readDataResult.value.sublist(5, 6))
+              .getUint8(0),
+          ByteData.sublistView(values_readDataResult.value.sublist(6, 7))
+              .getUint8(0),
+          ByteData.sublistView(values_readDataResult.value.sublist(7, 8))
+              .getUint8(0),
+          ByteData.sublistView(values_readDataResult.value.sublist(8, 9))
+              .getUint8(0),
+          ByteData.sublistView(values_readDataResult.value.sublist(9, 10))
+              .getUint8(0));
+
+      Data currentData = new Data(
+          deviceName: 'IOT_Tracker',
+          battery: (ByteData.sublistView(values_readDataResult.value.sublist(2, 4)).getUint16(0, Endian.little) * 0.01)
+              .toString(),
+          humi: (ByteData.sublistView(values_readDataResult.value.sublist(14, 16))
+                      .getUint16(0, Endian.little) *
+                  0.01)
+              .toStringAsFixed(2),
+          temper: (ByteData.sublistView(values_readDataResult.value.sublist(12, 14))
+                      .getUint16(0, Endian.little) *
+                  0.01)
+              .toStringAsFixed(2),
+          lat: currentLocation.latitude.toString(),
+          lng: currentLocation.longitude.toString(),
+          lex: (ByteData.sublistView(values_readDataResult.value.sublist(22, 24))
+                      .getUint16(0, Endian.little) *
+                  0.01)
+              .toString(),
+          time: datatime.toString());
+
+      sendTest(currentData);
+      // print('배터리 :' +
+      //     (ByteData.sublistView(values_readDataResult.value.sublist(2, 4))
+      //                 .getUint16(0, Endian.little) *
+      //             0.01)
+      //         .toString());
+      // print('내부온도 :' +
+      //     (ByteData.sublistView(values_readDataResult.value.sublist(10, 12))
+      //                 .getInt16(0, Endian.little) *
+      //             0.01)
+      //         .toString() +
+      //     "c");
+      // print('외부온도 :' +
+      //     (ByteData.sublistView(values_readDataResult.value.sublist(12, 14))
+      //                 .getInt16(0, Endian.little) *
+      //             0.01)
+      //         .toStringAsFixed(2) +
+      //     "c");
+      // print('습도 :' +
+      //     (ByteData.sublistView(values_readDataResult.value.sublist(14, 16))
+      //                 .getUint16(0, Endian.little) *
+      //             0.01)
+      //         .toStringAsFixed(2) +
+      //     "%");
+
+      //print('is? ' + Uint8List.fromList([1, 0, 0, 0]).toString());
+
+    }
+    setState(() {
+      message = '측정이 완료되었습니다.';
+    });
     // setState(() {
     //   _statusText += 'end';
     // });
@@ -227,6 +346,7 @@ class ScanscreenState extends State<Scanscreen> {
     if (Platform.isAndroid) {
       if (await Permission.contacts.request().isGranted) {
         print('입장하냐?');
+        //getCurrentLocation();
         scan();
         return;
       }
@@ -235,6 +355,7 @@ class ScanscreenState extends State<Scanscreen> {
       print("여기는요?" + statuses[Permission.location].toString());
       if (statuses[Permission.location].toString() ==
           "PermissionStatus.granted") {
+        //getCurrentLocation();
         scan();
       }
     }
@@ -521,50 +642,55 @@ class ScanscreenState extends State<Scanscreen> {
                 Expanded(
                   flex: 1,
                   child: Container(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Container(
-                            width: MediaQuery.of(context).size.width * 0.35,
-                            decoration: BoxDecoration(
-                              border: Border(),
-                            ),
-                            child: RaisedButton(
-                              padding: EdgeInsets.all(1),
-                              onPressed: () {
-                                startBtn();
-                              },
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(10))),
-                              color: Color.fromRGBO(22, 33, 55, 1),
-                              child: Container(
-                                child:
-                                    Text('측정 시작', style: this.startTextStyle),
+                      child: Column(
+                    children: [
+                      Text(message),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Container(
+                              width: MediaQuery.of(context).size.width * 0.35,
+                              decoration: BoxDecoration(
+                                border: Border(),
                               ),
-                            )),
-                        Container(
-                            width: MediaQuery.of(context).size.width * 0.35,
-                            decoration: BoxDecoration(
-                              border: Border(),
-                            ),
-                            child: RaisedButton(
-                              padding: EdgeInsets.all(1),
-                              onPressed: () {
-                                endBtn();
-                              },
-                              shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(10))),
-                              color: Color.fromRGBO(22, 33, 55, 1),
-                              child: Container(
-                                child:
-                                    Text('측정 종료', style: this.startTextStyle),
+                              child: RaisedButton(
+                                padding: EdgeInsets.all(1),
+                                onPressed: () {
+                                  startBtn();
+                                },
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(10))),
+                                color: Color.fromRGBO(22, 33, 55, 1),
+                                child: Container(
+                                  child:
+                                      Text('측정 시작', style: this.startTextStyle),
+                                ),
+                              )),
+                          Container(
+                              width: MediaQuery.of(context).size.width * 0.35,
+                              decoration: BoxDecoration(
+                                border: Border(),
                               ),
-                            ))
-                      ],
-                    ),
-                  ),
+                              child: RaisedButton(
+                                padding: EdgeInsets.all(1),
+                                onPressed: () {
+                                  getCurrentLocation();
+                                  endBtn();
+                                },
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(10))),
+                                color: Color.fromRGBO(22, 33, 55, 1),
+                                child: Container(
+                                  child:
+                                      Text('측정 종료', style: this.startTextStyle),
+                                ),
+                              ))
+                        ],
+                      ),
+                    ],
+                  )),
                 )
               ],
             ),
@@ -619,5 +745,32 @@ class ScanscreenState extends State<Scanscreen> {
       }
     }
     return buffer.toString();
+  }
+
+  getCurrentLocation() async {
+    bool _serviceEnabled;
+    loc.PermissionStatus _permissionGranted;
+    loc.LocationData _locationData;
+
+    _serviceEnabled = await location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await location.requestService();
+      if (!_serviceEnabled) {
+        return;
+      }
+    }
+
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == loc.PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != loc.PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    _locationData = await location.getLocation();
+    setState(() {
+      currentLocation = _locationData;
+    });
   }
 }

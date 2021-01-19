@@ -3,9 +3,9 @@ import 'dart:typed_data';
 class Util {
   static List<int> convertInt2Bytes(value, Endian order, int bytesSize) {
     try {
-      final kMaxBytes = 8;
+      final kMaxBytes = 4;
       var bytes = Uint8List(kMaxBytes)
-        ..buffer.asByteData().setInt64(0, value, order);
+        ..buffer.asByteData().setInt32(0, value, order);
       List<int> intArray;
       if (order == Endian.big) {
         intArray = bytes.sublist(kMaxBytes - bytesSize, kMaxBytes).toList();

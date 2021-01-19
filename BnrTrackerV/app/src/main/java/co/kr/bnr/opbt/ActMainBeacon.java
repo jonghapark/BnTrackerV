@@ -80,7 +80,7 @@ public class ActMainBeacon extends AppCompatActivity {
 
     private ProgressDialog mDiscoveringDialog;
     private ProgressDialog mConnectDialog;
-
+    private boolean endflag = false;
 
     private Handler mHandler;
     private int mSuccess = 0;
@@ -189,6 +189,7 @@ public class ActMainBeacon extends AppCompatActivity {
 
                             deviceInfo.mDevice = device;
                             deviceInfo.mConn = new SrvConnection(deviceInfo.mDevice);
+
                             bindService(new Intent(context, LeService.class), deviceInfo.mConn, 0);
                             onConnected(device);
                             deviceInfoList.add(deviceInfo);
@@ -548,12 +549,13 @@ public class ActMainBeacon extends AppCompatActivity {
     @OnClick(R.id.btnEnd)
     void onClickAddDevice4(View view) {
         deviceInfoList.clear();
-        textSend.setText("데이터 전송중");
+
         showFindDevice4();
     }
 
     //BLE스캔으로 찾은 디바이스를 다이얼로그로 띄워준다
     public void showFindDevice4() {
+        endflag = false;
         Intent intent = new Intent(getApplicationContext(), QrCodeActivity.class);
         startActivityForResult(intent, 4321);
     }
@@ -885,17 +887,18 @@ public class ActMainBeacon extends AppCompatActivity {
         else if(CommonUtil.bytesToHex(data).startsWith("7E7E2180")) {
             sendCommand(Common.commandSetLoggingMode, mDevice);
             textDeviceName.setText(mDevice.getName() + " 측정 시작");
-            textSend.setText("저장 모드로 전환되었습니다.");
+
         }
 
         else if(CommonUtil.bytesToHex(data).equals("7E7E2680000000007D7D")){
+            textSend.setText("저장 모드로 전환되었습니다.");
             String tmpname = mDevice.getName();
             onDisconnected(mDevice);
             removeDevice(tmpname);
         }
         else if(CommonUtil.bytesToHex(data).endsWith("427D7D")){
-            isReceving = false;
 
+            isReceving = false;
             isEnd = true;
         }
         else if(CommonUtil.bytesToHex(data).startsWith("7E7E0380")){
@@ -911,25 +914,36 @@ public class ActMainBeacon extends AppCompatActivity {
         }
         if(isEnd){
             String str = CommonUtil.bytesToHex(data);
-            resultRowData += str.substring(str.indexOf("FFAA"), str.length() - 4);
+            resultRowData += str.substring(0, str.length() - 4);
           //  resultRowData2 = resultRowData;
             CommonUtil.myLog("최종 rowData는요 : " + resultRowData);
-            textDeviceName.setText(mDevice.getName() + " 측정 종료");
+            textSend.setText("데이터 전송중");
+            String tmp = "";
+            if(mDevice != null){
+                tmp = mDevice.getName();
+            }
+            textDeviceName.setText(tmp + " 측정 종료");
             textSend.setText("총 " + String.valueOf(resultRowData.length()/48) + "개의 데이터를 전송했습니다.");
-
-
+            if(resultRowData.length() < 488){
+                resultRowData = resultRowData.substring(16, resultRowData.length());
+            }
 
             while(resultRowData.length() > 0) {
                 extractDataFromRawData(resultRowData.substring(0, 48), mDevice);
                 resultRowData = resultRowData.substring(48, resultRowData.length());
                 CommonUtil.myLog("현 rowData는요 : " + resultRowData);
             }
-            if(mDevice != null)
-            {
-            String tmpname = mDevice.getName();
-            onDisconnected(mDevice);
-            removeDevice(tmpname);
-        }}
+            //deviceInfoList.remove();
+           /// onDisconnected(device);
+//            if(mDevice != null)
+//            {
+            if(endflag == false) {
+                String tmpname = mDevice.getName();
+                onDisconnected(mDevice);
+                removeDevice(tmpname);
+                endflag = true;
+            }
+        }
         //updateView(APPEND_MESSAGE, msg, mDevice);
         //CommonUtil.myLog("APPEND_MESSAGE : " + msg);//여기가 진짜다
     }
