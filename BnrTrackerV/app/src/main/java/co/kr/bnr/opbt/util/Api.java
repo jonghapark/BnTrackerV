@@ -49,65 +49,65 @@ public class Api {
 
             AsyncHttpClient client2 = new AsyncHttpClient();
 
-            client.post(Common.SERVER_URL_API+"/saveData.php", params, new JsonHttpResponseHandler() {
-                @Override
-                public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
-                    //Util.myToast(con, "죄송합니다. 데이터 전송에 실패 했습니다.(1)");
-                    //dialog.dismiss();
-                    Util.myLog("onFailure 오류메세지1:"+responseString);
-                    Util.myLog("onFailure 오류메세지12:"+new Exception(throwable).getMessage());
-                }
-
-                @Override
-                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                    super.onFailure(statusCode, headers, throwable, errorResponse);
-                    //Util.myToast(con, "죄송합니다. 데이터 전송에 실패 했습니다.(2)");
-                    Util.myLog("onFailure 오류메세지2:"+new Exception(throwable).getMessage());
-                    Util.myLog("onFailure 오류메세지22:"+errorResponse.toString());
-                    //dialog.dismiss();
-                }
-
-                @Override
-                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
-                    super.onFailure(statusCode, headers, throwable, errorResponse);
-                    //Util.myToast(con, "죄송합니다. 데이터 전송에 실패 했습니다.(3)");
-                    Util.myLog("onFailure 오류메세지3:"+new Exception(throwable).getMessage());
-                    Util.myLog("onFailure 오류메세지33:"+errorResponse.toString());
-                    //dialog.dismiss();
-                }
-
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                    try{
-                        Util.myLog("sendData 내용:"+response.toString());
-                        boolean status_code = response.getBoolean("status_code");
-                        String message = response.getString("message");
-                        //성공이든 실패든 메세지에서 알아서 들어옴
-                        //Util.myToast(con, message);
-
-                        //요청 성공
-                        if(status_code) {
-                            callback.callback(true, message);
-                        }
-                        //실패
-                        else {
-                            callback.callback(false, message);
-                        }
-
-                        //dialog.dismiss();
-                    }
-                    catch(Exception e){
-                        e.printStackTrace();
-                        //dialog.dismiss();
-                    }
-                    super.onSuccess(statusCode, headers, response);
-                }
-
-                @Override
-                protected Object parseResponse(byte[] responseBody) throws JSONException {
-                    return super.parseResponse(responseBody);
-                }
-            });
+//            client.post(Common.SERVER_URL_API+"/saveData.php", params, new JsonHttpResponseHandler() {
+//                @Override
+//                public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+//                    //Util.myToast(con, "죄송합니다. 데이터 전송에 실패 했습니다.(1)");
+//                    //dialog.dismiss();
+//                    Util.myLog("onFailure 오류메세지1:"+responseString);
+//                    Util.myLog("onFailure 오류메세지12:"+new Exception(throwable).getMessage());
+//                }
+//
+//                @Override
+//                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+//                    super.onFailure(statusCode, headers, throwable, errorResponse);
+//                    //Util.myToast(con, "죄송합니다. 데이터 전송에 실패 했습니다.(2)");
+//                    Util.myLog("onFailure 오류메세지2:"+new Exception(throwable).getMessage());
+//                    Util.myLog("onFailure 오류메세지22:"+errorResponse.toString());
+//                    //dialog.dismiss();
+//                }
+//
+//                @Override
+//                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
+//                    super.onFailure(statusCode, headers, throwable, errorResponse);
+//                    //Util.myToast(con, "죄송합니다. 데이터 전송에 실패 했습니다.(3)");
+//                    Util.myLog("onFailure 오류메세지3:"+new Exception(throwable).getMessage());
+//                    Util.myLog("onFailure 오류메세지33:"+errorResponse.toString());
+//                    //dialog.dismiss();
+//                }
+//
+//                @Override
+//                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+//                    try{
+//                        Util.myLog("sendData 내용:"+response.toString());
+//                        boolean status_code = response.getBoolean("status_code");
+//                        String message = response.getString("message");
+//                        //성공이든 실패든 메세지에서 알아서 들어옴
+//                        //Util.myToast(con, message);
+//
+//                        //요청 성공
+//                        if(status_code) {
+//                            callback.callback(true, message);
+//                        }
+//                        //실패
+//                        else {
+//                            callback.callback(false, message);
+//                        }
+//
+//                        //dialog.dismiss();
+//                    }
+//                    catch(Exception e){
+//                        e.printStackTrace();
+//                        //dialog.dismiss();
+//                    }
+//                    super.onSuccess(statusCode, headers, response);
+//                }
+//
+//                @Override
+//                protected Object parseResponse(byte[] responseBody) throws JSONException {
+//                    return super.parseResponse(responseBody);
+//                }
+//            });
 
             client2.post(Common.SERVER_URL_API_TEMP+"/saveData.php", params, new JsonHttpResponseHandler() {
                 @Override

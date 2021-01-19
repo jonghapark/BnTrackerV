@@ -143,6 +143,7 @@ public class ActMainBeacon extends AppCompatActivity {
 //        }
         if (enable) {
             // Stops scanning after a pre-defined scan period.
+            // Stops scanning after a pre-defined scan period.
 //            mHandler.postDelayed(new Runnable() {
 //                @Override
 //                public void run() {
@@ -215,8 +216,7 @@ public class ActMainBeacon extends AppCompatActivity {
                                 CommonUtil.myLog("beaconDate : " + CommonUtil.bytesToHex(scanRecord));
                                 textTemp.setText(String.format("%.2f" , CommonUtil.hexToDecimal(temper) * 0.01) + "°C");
                                 textHumidity.setText(String.format("%.2f" ,CommonUtil.hexToDecimal(humi) * 0.01) + "%");
-                                textDeviceName.setText(device.getName() + " 측정 시작");
-                                textSend.setText("저장 모드로 전환되었습니다.");
+
                             }
                             // adapter.notifyDataSetChanged();
                             // sendCommand(Common.commandRemoveLoggingData, deviceInfo.mConn.mDevice);
@@ -884,6 +884,8 @@ public class ActMainBeacon extends AppCompatActivity {
         //시간세팅 이후 로깅모
         else if(CommonUtil.bytesToHex(data).startsWith("7E7E2180")) {
             sendCommand(Common.commandSetLoggingMode, mDevice);
+            textDeviceName.setText(mDevice.getName() + " 측정 시작");
+            textSend.setText("저장 모드로 전환되었습니다.");
         }
 
         else if(CommonUtil.bytesToHex(data).equals("7E7E2680000000007D7D")){
