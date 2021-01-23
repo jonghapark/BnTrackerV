@@ -36,7 +36,8 @@ class ScanscreenState extends State<Scanscreen> {
   StreamSubscription<loc.LocationData> _locationSubscription;
   String _error;
   String geolocation;
-  String currentDeviceName;
+  String currentDeviceName = '';
+  // double width;
 
   String currentTemp;
   String currentHumi;
@@ -44,6 +45,7 @@ class ScanscreenState extends State<Scanscreen> {
   @override
   void initState() {
     super.initState();
+    //width = MediaQuery.of(context).size.width;
     currentDeviceName = '';
     currentTemp = '-';
     currentHumi = '-';
@@ -73,12 +75,14 @@ class ScanscreenState extends State<Scanscreen> {
       if (!_isScanning) {
         scan();
       }
-      setState(() {
-        _error = null;
-        this.currentLocation = currentLocation;
+      if (this.geolocation != first.addressLine) {
+        setState(() {
+          _error = null;
+          this.currentLocation = currentLocation;
 
-        this.geolocation = first.addressLine;
-      });
+          this.geolocation = first.addressLine;
+        });
+      }
     });
   }
 
@@ -332,16 +336,20 @@ class ScanscreenState extends State<Scanscreen> {
     setState(() {
       message = '총 ' + dataSize.toString() + '개의 데이터 전송중';
     });
+    int count = 0;
     for (var i = 0; i < dataSize; i++) {
-      if ((((i / dataSize) * 100) % 10) == 0) {
+      //  if ((((i * 100 / dataSize)) % 10) == 0) {
+      count++;
+      if (count % 10 == 0) {
         setState(() {
           message = '총 ' +
               dataSize.toString() +
               '개의 데이터 전송중 ' +
-              (i / dataSize * 100).toStringAsFixed(0) +
+              (i * 100 / dataSize).toStringAsFixed(0) +
               '%';
         });
       }
+
       Data data = new Data();
       DateTime datatime;
       var values_setIndex = await _curPeripheral.writeCharacteristic(
@@ -422,7 +430,7 @@ class ScanscreenState extends State<Scanscreen> {
     }
     await _curPeripheral.disconnectOrCancelConnection();
     setState(() {
-      message = '측정이 완료되었습니다.';
+      message = '총 ' + dataSize.toString() + '개 데이터 전송 완료';
     });
     // setState(() {
     //   _statusText += 'end';
@@ -533,11 +541,11 @@ class ScanscreenState extends State<Scanscreen> {
               // itemBuilder: (context, index) () ListView.builder()
               // 처음에 1.. 시작하면 2, connected 3 disconnected 4
               // 리스트중 한개를 탭(터치) 하면 해당 디바이스와 연결을 시도한다.
-              bool currentState = false;
-              setState(() {
-                processState = 2;
-              });
-              connect(index);
+              // bool currentState = false;
+              // setState(() {
+              //   processState = 2;
+              // });
+              // connect(index);
             });
       },
     );
@@ -583,7 +591,7 @@ class ScanscreenState extends State<Scanscreen> {
       setState(() {
         //BLE 상태가 변경되면 화면도 갱신
         _isScanning = true;
-        setBLEState('스캔중');
+        setBLEState('<스캔중>');
       });
     } else {
       //스캔중이었으면 스캔 중지
@@ -677,7 +685,7 @@ class ScanscreenState extends State<Scanscreen> {
         case PeripheralConnectionState.connecting:
           {
             print('연결중입니당!');
-            setBLEState('연결 중');
+            setBLEState('<연결 중>');
           } //연결중
           break;
         case PeripheralConnectionState.disconnected:
@@ -685,7 +693,7 @@ class ScanscreenState extends State<Scanscreen> {
             //해제됨
             _connected = false;
             print("${peripheral.name} has DISCONNECTED");
-            setBLEState('연결 종료');
+            setBLEState('<연결 종료>');
             if (processState == 2) {
               setState(() {
                 processState = 4;
@@ -696,7 +704,7 @@ class ScanscreenState extends State<Scanscreen> {
           break;
         case PeripheralConnectionState.disconnecting:
           {
-            setBLEState('연결 종료중');
+            setBLEState('<연결 종료중>');
           } //해제중
           break;
         default:
@@ -795,7 +803,7 @@ class ScanscreenState extends State<Scanscreen> {
               ),
             ],
           )),
-          body: Center(
+          body: Container(
             child: Column(
               children: <Widget>[
                 Expanded(
@@ -808,7 +816,9 @@ class ScanscreenState extends State<Scanscreen> {
                           color: Colors.black,
                           size: MediaQuery.of(context).size.width * 0.15,
                         ),
-                        currentLocation != null ? Text(geolocation) : Text(''),
+                        currentLocation != null
+                            ? Text(geolocation.substring(5, geolocation.length))
+                            : Text(''),
                       ],
                     )),
                 Expanded(
@@ -925,15 +935,17 @@ class ScanscreenState extends State<Scanscreen> {
                   flex: 1,
                   child: Container(
                       child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            currentDeviceName + ' ' + _statusText,
-                            style: startTextStyle,
-                          ),
+                          currentDeviceName != null
+                              ? Text(
+                                  currentDeviceName + ' ' + _statusText,
+                                  style: startTextStyle,
+                                )
+                              : Text(''),
                           processState == 4
                               ? Text(
                                   '연결에 실패했습니다.',
@@ -947,7 +959,7 @@ class ScanscreenState extends State<Scanscreen> {
                         children: [
                           Container(
                               width: MediaQuery.of(context).size.width * 0.5,
-                              height: MediaQuery.of(context).size.width * 0.15,
+                              height: MediaQuery.of(context).size.width * 0.12,
                               decoration: BoxDecoration(
                                 border: Border(),
                               ),
@@ -955,13 +967,17 @@ class ScanscreenState extends State<Scanscreen> {
                                 //padding: EdgeInsets.all(1),
                                 onPressed: () async {
                                   scan();
+                                  setState(() {
+                                    currentHumi = '-';
+                                    currentTemp = '-';
+                                  });
                                   currentMode = 'Start';
                                   String checkPermission =
                                       await _checkPermissionCamera();
                                   if (checkPermission == 'Pass') {
                                     String result = await scanner.scan();
 
-                                    if (result != '') {
+                                    if (result != null) {
                                       setState(() {
                                         currentDeviceName = result;
                                       });
@@ -970,9 +986,9 @@ class ScanscreenState extends State<Scanscreen> {
                                     }
                                   }
                                 },
-                                // shape: RoundedRectangleBorder(
-                                //     borderRadius:
-                                //         BorderRadius.all(Radius.circular(10))),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(0))),
                                 color: Color.fromRGBO(22, 33, 55, 1),
                                 child: Container(
                                   child:
@@ -981,7 +997,7 @@ class ScanscreenState extends State<Scanscreen> {
                               )),
                           Container(
                               width: MediaQuery.of(context).size.width * 0.5,
-                              height: MediaQuery.of(context).size.width * 0.15,
+                              height: MediaQuery.of(context).size.width * 0.12,
                               decoration: BoxDecoration(
                                 border: Border(),
                               ),
@@ -989,6 +1005,10 @@ class ScanscreenState extends State<Scanscreen> {
                                 //padding: EdgeInsets.all(1),
                                 onPressed: () async {
                                   scan();
+                                  setState(() {
+                                    currentHumi = '-';
+                                    currentTemp = '-';
+                                  });
                                   currentMode = 'End';
                                   String checkPermission =
                                       await _checkPermissionCamera();
@@ -1002,9 +1022,9 @@ class ScanscreenState extends State<Scanscreen> {
                                     }
                                   }
                                 },
-                                // shape: RoundedRectangleBorder(
-                                //     borderRadius:
-                                //         BorderRadius.all(Radius.circular(10))),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(0))),
                                 color: Color.fromRGBO(22, 33, 55, 1),
                                 child: Container(
                                   child:
@@ -1030,7 +1050,7 @@ class ScanscreenState extends State<Scanscreen> {
   }
 
   TextStyle startTextStyle = TextStyle(
-    fontSize: 19,
+    fontSize: 16,
     color: Color.fromRGBO(22, 33, 55, 1),
     fontWeight: FontWeight.w600,
   );
