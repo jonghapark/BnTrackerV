@@ -11,11 +11,11 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:location/location.dart' as loc;
 import 'package:qrscan/qrscan.dart' as scanner;
+import 'package:geocoder/geocoder.dart';
 // URL
 // 10.3.141.1:4000
 
 class Scanscreen extends StatefulWidget {
- 
   @override
   ScanscreenState createState() => ScanscreenState();
 }
@@ -24,7 +24,8 @@ class ScanscreenState extends State<Scanscreen> {
   BleManager _bleManager = BleManager();
   bool _isScanning = false;
   bool _connected = false;
-  String message = '-';
+  String currentMode = 'normal';
+  String message = '';
   Peripheral _curPeripheral; // 연결된 장치 변수
   List<BleDeviceItem> deviceList = []; // BLE 장치 리스트 변수
   String _statusText = ''; // BLE 상태 변수
@@ -32,20 +33,56 @@ class ScanscreenState extends State<Scanscreen> {
   int dataSize = 0;
   loc.Location location = new loc.Location();
   int processState = 1;
+  StreamSubscription<loc.LocationData> _locationSubscription;
+  String _error;
+  String geolocation;
+  String currentDeviceName;
+
+  String currentTemp;
+  String currentHumi;
 
   @override
   void initState() {
-    getCurrentLocation();
-    init();
-    location.onLocationChanged.listen((loc.LocationData currentLocation) {
-      //print('여긴오냐' + '');
-      this.currentLocation = currentLocation;
-      // Use current location
-    });
     super.initState();
+    currentDeviceName = '';
+    currentTemp = '-';
+    currentHumi = '-';
+    _listenLocation();
+    // getCurrentLocation();
+    init();
+    // location.onLocationChanged.listen((loc.LocationData currentLocation) {
+    //   this.currentLocation = currentLocation;
+    //   print('여긴오냐 ->' + currentLocation.latitude.toString());
+    //   // Use current location
+    // });
   }
 
-  Future<Post> sendTest(Data data) async {
+  Future<void> _listenLocation() async {
+    _locationSubscription =
+        location.onLocationChanged.handleError((dynamic err) {
+      setState(() {
+        _error = err.code;
+      });
+      _locationSubscription.cancel();
+    }).listen((loc.LocationData currentLocation) async {
+      final coordinates =
+          new Coordinates(currentLocation.latitude, currentLocation.longitude);
+      var addresses =
+          await Geocoder.local.findAddressesFromCoordinates(coordinates);
+      var first = addresses.first;
+      if (!_isScanning) {
+        scan();
+      }
+      setState(() {
+        _error = null;
+        this.currentLocation = currentLocation;
+
+        this.geolocation = first.addressLine;
+      });
+    });
+  }
+
+  Future<Post> sendData(Data data) async {
     var client = http.Client();
     try {
       var uriResponse =
@@ -66,45 +103,9 @@ class ScanscreenState extends State<Scanscreen> {
     }
   }
 
-  Future<Post> sendPost() async {
-    final response = await http.post(
-      'http://175.126.232.236/_API/saveData.php',
-      body: jsonEncode(
-        {
-          "isRegularData": "true",
-          "tra_datetime": new DateTime.now().toString(),
-          "tra_temp": "22",
-          "tra_humidity": "28",
-          "tra_lat": "36.1523523",
-          "tra_lon": "127.5339587",
-          "de_number": "OPBT102814",
-          "tra_battery": "3.52"
-        },
-      ),
-      headers: {'content-type': "application/json"},
-    );
-    var responseResult;
-    print(response.statusCode.toString());
-    if (response.statusCode == 200) {
-      // 만약 서버가 OK 응답을 반환하면, JSON을 파싱합니다.
-      //print(utf8.decode(response.bodyBytes));
-
-      responseResult = utf8.decode(response.bodyBytes);
-      print(responseResult.toString());
-      return Post.fromJson(jsonDecode(response.body));
-    } else {
-      responseResult = utf8.decode(response.bodyBytes);
-      print("error code : " + response.statusCode.toString());
-
-      //401 : 아이디 패스워드 일치 x
-      //400 : 빈 공간.
-      // 만약 응답이 OK가 아니면, 에러를 던집니다.
-      //showAlertDialog(context);
-    }
-  }
-
   void startBtn() async {
-    if (_curPeripheral.name != null) {
+    print('연결안됨? ' + _curPeripheral.name);
+    if (_curPeripheral.name != '') {
       setState(() {
         message = '측정 시작을 위한 세팅중입니다.';
       });
@@ -112,10 +113,58 @@ class ScanscreenState extends State<Scanscreen> {
         dataSize = 0;
         var values_tempreadDataResult = await _curPeripheral.readCharacteristic(
             'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
-            '65ac0f6d-3a8c-4592-a20d-d1bd373d2f64');
-        print('온도:' + values_tempreadDataResult.value.toString());
+            'deee3567-5abb-4ae5-94f0-90c80b62dd46');
+
+        double tmp = ByteData.sublistView(values_tempreadDataResult.value)
+            .getFloat32(0, Endian.little);
+
+        if (tmp != -100.0) {
+          setState(() {
+            currentTemp = tmp.toStringAsFixed(2) + '℃';
+          });
+        }
+
+        print('내부온도:' +
+            ByteData.sublistView(values_tempreadDataResult.value)
+                .getFloat32(0, Endian.little)
+                .toString());
+
+        var values_tempreadDataResult2 =
+            await _curPeripheral.readCharacteristic(
+                'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
+                '65ac0f6d-3a8c-4592-a20d-d1bd373d2f64');
+        print('외부온도:' +
+            ByteData.sublistView(values_tempreadDataResult2.value)
+                .getFloat32(0, Endian.little)
+                .toString());
+        double tmp2 = ByteData.sublistView(values_tempreadDataResult2.value)
+            .getFloat32(0, Endian.little);
+
+        if (tmp2 != -100.0) {
+          setState(() {
+            currentTemp = tmp2.toStringAsFixed(2) + '℃';
+          });
+        }
+
+        var values_tempreadDataResult3 =
+            await _curPeripheral.readCharacteristic(
+                'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
+                'a57381ab-e640-46e9-89e3-47d1f34ed75f');
+        print('내부습도:' +
+            ByteData.sublistView(values_tempreadDataResult3.value)
+                .getFloat32(0, Endian.little)
+                .toString());
+        double tmp3 = ByteData.sublistView(values_tempreadDataResult3.value)
+            .getFloat32(0, Endian.little);
+
+        if (tmp3 != -100.0) {
+          setState(() {
+            currentHumi = tmp3.toStringAsFixed(2) + '%';
+          });
+        }
 
         // 데이터 삭제 (검증 완료)
+        //TODO: FIX Point
         var values_deleteData = await _curPeripheral.writeCharacteristic(
             '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
             '12a13958-d4a2-4808-9297-c8b277833ed8',
@@ -133,6 +182,7 @@ class ScanscreenState extends State<Scanscreen> {
 
         var blob = ByteData.sublistView(values_readDatasize.value);
         dataSize = blob.getUint16(0, Endian.little);
+        print('저장된 데이터 : ' + dataSize.toString());
 
         print('what? ' +
             Util.convertInt2Bytes(dataSize, Endian.little, 4).toString());
@@ -170,22 +220,24 @@ class ScanscreenState extends State<Scanscreen> {
         //  print('test : ' + values_testreadData.value.toString());
 
         //  외부 온도센서 활성화 - 왜 안될까
-        var values_setTempData = await _curPeripheral.writeCharacteristic(
-            'cf08a8c2-485a-4e18-8fe9-018700449787',
-            '51186f4c-c8f9-4c67-ac1f-a33ba77eb76b',
-            Uint8List.fromList([1]),
-            false);
+        //TODO: FIX Point
+        // var values_setTempData = await _curPeripheral.writeCharacteristic(
+        //     'cf08a8c2-485a-4e18-8fe9-018700449787',
+        //     '51186f4c-c8f9-4c67-ac1f-a33ba77eb76b',
+        //     Uint8List.fromList([1]),
+        //     false);
 
         //  데이터 읽기
         //  인덱스 설정
 
         //  print(Uint8List.fromList([2, 0]));
         // 측정시작 명령어
-        await _curPeripheral.writeCharacteristic(
-            'cf08a8c2-485a-4e18-8fe9-018700449787',
-            '705ec125-966d-4275-bd80-a1b2a8bc28d6',
-            Uint8List.fromList([1]),
-            false);
+        //TODO: FIX Point
+        // await _curPeripheral.writeCharacteristic(
+        //     'cf08a8c2-485a-4e18-8fe9-018700449787',
+        //     '705ec125-966d-4275-bd80-a1b2a8bc28d6',
+        //     Uint8List.fromList([1]),
+        //     false);
 
         // //설정 종료
         await _curPeripheral.writeCharacteristic(
@@ -203,20 +255,72 @@ class ScanscreenState extends State<Scanscreen> {
       setState(() {
         message = '측정 시작';
       });
+      await _curPeripheral.disconnectOrCancelConnection();
     }
   }
 
-  void endBtn() async {
+  endBtn() async {
     // sendTest();
     // 측정종료 명령어
     setState(() {
       message = '데이터를 읽어오고 있습니다.';
     });
-    await _curPeripheral.writeCharacteristic(
-        'cf08a8c2-485a-4e18-8fe9-018700449787',
-        '705ec125-966d-4275-bd80-a1b2a8bc28d6',
-        Uint8List.fromList([0]),
-        false);
+    //TODO: FIX Point
+    // await _curPeripheral.writeCharacteristic(
+    //     'cf08a8c2-485a-4e18-8fe9-018700449787',
+    //     '705ec125-966d-4275-bd80-a1b2a8bc28d6',
+    //     Uint8List.fromList([0]),
+    //     false);
+
+    var values_tempreadDataResult = await _curPeripheral.readCharacteristic(
+        'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
+        'deee3567-5abb-4ae5-94f0-90c80b62dd46');
+
+    double tmp = ByteData.sublistView(values_tempreadDataResult.value)
+        .getFloat32(0, Endian.little);
+
+    if (tmp != -100.0) {
+      setState(() {
+        currentTemp = tmp.toStringAsFixed(2) + '℃';
+      });
+    }
+
+    print('내부온도:' +
+        ByteData.sublistView(values_tempreadDataResult.value)
+            .getFloat32(0, Endian.little)
+            .toString());
+
+    var values_tempreadDataResult2 = await _curPeripheral.readCharacteristic(
+        'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
+        '65ac0f6d-3a8c-4592-a20d-d1bd373d2f64');
+    print('외부온도:' +
+        ByteData.sublistView(values_tempreadDataResult2.value)
+            .getFloat32(0, Endian.little)
+            .toString());
+    double tmp2 = ByteData.sublistView(values_tempreadDataResult2.value)
+        .getFloat32(0, Endian.little);
+
+    if (tmp2 != -100.0) {
+      setState(() {
+        currentTemp = tmp2.toStringAsFixed(2) + '℃';
+      });
+    }
+
+    var values_tempreadDataResult3 = await _curPeripheral.readCharacteristic(
+        'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
+        'a57381ab-e640-46e9-89e3-47d1f34ed75f');
+    print('내부습도:' +
+        ByteData.sublistView(values_tempreadDataResult3.value)
+            .getFloat32(0, Endian.little)
+            .toString());
+    double tmp3 = ByteData.sublistView(values_tempreadDataResult3.value)
+        .getFloat32(0, Endian.little);
+
+    if (tmp3 != -100.0) {
+      setState(() {
+        currentHumi = tmp3.toStringAsFixed(2) + '%';
+      });
+    }
 
     var values_readDatasize = await _curPeripheral.readCharacteristic(
         '66ee2010-bc01-4e93-8a06-c3d7af72dec3',
@@ -224,10 +328,20 @@ class ScanscreenState extends State<Scanscreen> {
 
     var blob = ByteData.sublistView(values_readDatasize.value);
     dataSize = blob.getUint16(0, Endian.little);
+    print('dataSize : ' + dataSize.toString());
     setState(() {
-      message = '데이터 전송중';
+      message = '총 ' + dataSize.toString() + '개의 데이터 전송중';
     });
     for (var i = 0; i < dataSize; i++) {
+      if ((((i / dataSize) * 100) % 10) == 0) {
+        setState(() {
+          message = '총 ' +
+              dataSize.toString() +
+              '개의 데이터 전송중 ' +
+              (i / dataSize * 100).toStringAsFixed(0) +
+              '%';
+        });
+      }
       Data data = new Data();
       DateTime datatime;
       var values_setIndex = await _curPeripheral.writeCharacteristic(
@@ -258,25 +372,27 @@ class ScanscreenState extends State<Scanscreen> {
 
       Data currentData = new Data(
           deviceName: 'IOT_Tracker',
-          battery: (ByteData.sublistView(values_readDataResult.value.sublist(2, 4)).getUint16(0, Endian.little) * 0.01)
-              .toString(),
+          battery:
+              (ByteData.sublistView(values_readDataResult.value.sublist(2, 4))
+                          .getUint16(0, Endian.little) *
+                      0.01)
+                  .toString(),
           humi: (ByteData.sublistView(values_readDataResult.value.sublist(14, 16))
                       .getUint16(0, Endian.little) *
                   0.01)
               .toStringAsFixed(2),
-          temper: (ByteData.sublistView(values_readDataResult.value.sublist(12, 14))
-                      .getUint16(0, Endian.little) *
-                  0.01)
-              .toStringAsFixed(2),
+          temper:
+              (ByteData.sublistView(values_readDataResult.value.sublist(12, 14))
+                          .getUint16(0, Endian.little) *
+                      0.01)
+                  .toStringAsFixed(2),
           lat: currentLocation.latitude.toString(),
           lng: currentLocation.longitude.toString(),
-          lex: (ByteData.sublistView(values_readDataResult.value.sublist(22, 24))
-                      .getUint16(0, Endian.little) *
-                  0.01)
-              .toString(),
+          lex: (ByteData.sublistView(values_readDataResult.value.sublist(22, 24)).getUint16(0, Endian.little) * 0.01).toStringAsFixed(2),
           time: datatime.toString());
 
-      sendTest(currentData);
+      sendData(currentData);
+
       // print('배터리 :' +
       //     (ByteData.sublistView(values_readDataResult.value.sublist(2, 4))
       //                 .getUint16(0, Endian.little) *
@@ -304,6 +420,7 @@ class ScanscreenState extends State<Scanscreen> {
       //print('is? ' + Uint8List.fromList([1, 0, 0, 0]).toString());
 
     }
+    await _curPeripheral.disconnectOrCancelConnection();
     setState(() {
       message = '측정이 완료되었습니다.';
     });
@@ -321,10 +438,10 @@ class ScanscreenState extends State<Scanscreen> {
     }
   }
 
-  startQRroutine() {
+  startQRroutine(String result) async {
     int findIndex = -1;
     for (var i = 0; i < deviceList.length; i++) {
-      if (deviceList[i].deviceName == 'OPBT102822') {
+      if (deviceList[i].deviceName == result) {
         findIndex = i;
         break;
       }
@@ -332,14 +449,16 @@ class ScanscreenState extends State<Scanscreen> {
     if (findIndex != -1) {
       setState(() {
         processState = 2;
+        message = '연결중 입니다.';
       });
-      connect(findIndex);
+      bool result = await connect(findIndex);
+      return result;
     } else {
       setState(() {
         message = '디바이스를 찾을 수 없습니다.';
       });
       for (var i = 0; i < deviceList.length; i++) {
-        if (deviceList[i].deviceName == 'OPBT102822') {
+        if (deviceList[i].deviceName == result) {
           findIndex = i;
           break;
         }
@@ -450,11 +569,12 @@ class ScanscreenState extends State<Scanscreen> {
         // 새로 발견된 장치면 추가
         if (!findDevice) {
           if (name != "Unknown") {
+            // if (name.substring(0, 3) == 'IOT') {
             deviceList.add(BleDeviceItem(name, scanResult.rssi,
                 scanResult.peripheral, scanResult.advertisementData));
             // print(scanResult.peripheral.name +
             //     "의 advertiseData  \n" +
-
+            // }
           }
         }
         //페이지 갱신용
@@ -463,16 +583,17 @@ class ScanscreenState extends State<Scanscreen> {
       setState(() {
         //BLE 상태가 변경되면 화면도 갱신
         _isScanning = true;
-        setBLEState('Scanning');
+        setBLEState('스캔중');
       });
     } else {
-      //스켄중이었으면 스캔 중지
-      _bleManager.stopPeripheralScan();
-      setState(() {
-        //BLE 상태가 변경되면 페이지도 갱신
-        _isScanning = false;
-        setBLEState('Stop Scan');
-      });
+      //스캔중이었으면 스캔 중지
+      // TODO: 일단 주석!
+      // _bleManager.stopPeripheralScan();
+      // setState(() {
+      //   //BLE 상태가 변경되면 페이지도 갱신
+      //   _isScanning = false;
+      //   setBLEState('Stop Scan');
+      // });
     }
   }
 
@@ -516,8 +637,9 @@ class ScanscreenState extends State<Scanscreen> {
           {
             //연결됨
             _curPeripheral = peripheral;
+            getCurrentLocation();
             //peripheral.
-            setBLEState('connected');
+            setBLEState('연결 완료');
             setState(() {
               processState = 3;
             });
@@ -555,7 +677,7 @@ class ScanscreenState extends State<Scanscreen> {
         case PeripheralConnectionState.connecting:
           {
             print('연결중입니당!');
-            setBLEState('connecting');
+            setBLEState('연결 중');
           } //연결중
           break;
         case PeripheralConnectionState.disconnected:
@@ -563,7 +685,7 @@ class ScanscreenState extends State<Scanscreen> {
             //해제됨
             _connected = false;
             print("${peripheral.name} has DISCONNECTED");
-            setBLEState('disconnected');
+            setBLEState('연결 종료');
             if (processState == 2) {
               setState(() {
                 processState = 4;
@@ -574,7 +696,7 @@ class ScanscreenState extends State<Scanscreen> {
           break;
         case PeripheralConnectionState.disconnecting:
           {
-            setBLEState('disconnecting');
+            setBLEState('연결 종료중');
           } //해제중
           break;
         default:
@@ -592,12 +714,12 @@ class ScanscreenState extends State<Scanscreen> {
       if (isConnected) {
         print('device is already connected');
         //이미 연결되어 있기때문에 무시하고 종료..
-        print('123');
-        return;
+        return this._connected;
       }
 
       //연결 시작!
       await peripheral.connect().then((_) {
+        this._curPeripheral = peripheral;
         //연결이 되면 장치의 모든 서비스와 캐릭터리스틱을 검색한다.
         peripheral
             .discoverAllServicesAndCharacteristics()
@@ -616,7 +738,11 @@ class ScanscreenState extends State<Scanscreen> {
           //모든 과정이 마무리되면 연결되었다고 표시
           _connected = true;
           _isScanning = true;
-
+          if (currentMode == 'Start')
+            startBtn();
+          else {
+            endBtn();
+          }
           setState(() {});
 
           // print(values[''];
@@ -632,17 +758,18 @@ class ScanscreenState extends State<Scanscreen> {
           //         .toString());
         });
       });
+      return _connected;
     });
   }
 
   TextStyle boldTextStyle = TextStyle(
-    fontSize: 17,
+    fontSize: 30,
     color: Color.fromRGBO(255, 255, 255, 1),
     fontWeight: FontWeight.w700,
   );
 
   TextStyle thinTextStyle = TextStyle(
-    fontSize: 15,
+    fontSize: 22,
     color: Color.fromRGBO(244, 244, 244, 1),
     fontWeight: FontWeight.w500,
   );
@@ -672,153 +799,216 @@ class ScanscreenState extends State<Scanscreen> {
             child: Column(
               children: <Widget>[
                 Expanded(
-                  flex: 6,
-                  child: list(), //리스트 출력
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    child: Row(
-                      children: <Widget>[
-                        RaisedButton(
-                          //scan 버튼
-                          onPressed: scan,
-                          child: Icon(_isScanning
-                              ? Icons.stop
-                              : Icons.bluetooth_searching),
+                    flex: 1,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: Colors.black,
+                          size: MediaQuery.of(context).size.width * 0.15,
                         ),
-                        SizedBox(
-                          width: 10,
-                        ),
-                        Text("State : "), Text(_statusText), //상태 정보 표시
+                        currentLocation != null ? Text(geolocation) : Text(''),
                       ],
+                    )),
+                Expanded(
+                    flex: 2,
+                    child: Container(
+                      margin: EdgeInsets.all(
+                          MediaQuery.of(context).size.width * 0.035),
+                      width: MediaQuery.of(context).size.width * 0.915,
+                      // height:
+                      //     MediaQuery.of(context).size.width * 0.45,
+                      decoration: BoxDecoration(
+                          //boxShadow: [customeBoxShadow()],
+                          //color: Color.fromRGBO(81, 97, 130, 1),
+                          border: Border(
+                        top: BorderSide(
+                            width: 2, color: Color.fromRGBO(22, 33, 55, 1)),
+                        bottom: BorderSide(
+                            width: 2, color: Color.fromRGBO(22, 33, 55, 1)),
+                      )),
+                      child: list(),
+                    ) //리스트 출력
                     ),
-                  ),
-                ),
+                Expanded(
+                    flex: 2,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Container(
+                                width: MediaQuery.of(context).size.width * 0.45,
+                                height:
+                                    MediaQuery.of(context).size.width * 0.45,
+                                decoration: BoxDecoration(
+                                  boxShadow: [customeBoxShadow()],
+                                  border: Border(),
+                                ),
+                                child: RaisedButton(
+                                  padding: EdgeInsets.all(1),
+                                  onPressed: () {},
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(10))),
+                                  color: Color.fromRGBO(22, 33, 55, 1),
+                                  child: Container(
+                                      child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Image(
+                                        image: AssetImage(
+                                            'images/ic_thermometer.png'),
+                                        fit: BoxFit.cover,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.20,
+                                        height:
+                                            MediaQuery.of(context).size.width *
+                                                0.20,
+                                      ),
+                                      currentHumi == ''
+                                          ? Text('온도',
+                                              style: this.boldTextStyle)
+                                          : Text(currentTemp,
+                                              style: this.boldTextStyle),
+                                    ],
+                                  )),
+                                )),
+                            Container(
+                                width: MediaQuery.of(context).size.width * 0.45,
+                                height:
+                                    MediaQuery.of(context).size.width * 0.45,
+                                decoration: BoxDecoration(
+                                  boxShadow: [customeBoxShadow()],
+                                  border: Border(),
+                                ),
+                                child: RaisedButton(
+                                  padding: EdgeInsets.all(1),
+                                  onPressed: () {},
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.all(
+                                          Radius.circular(10))),
+                                  color: Color.fromRGBO(22, 33, 55, 1),
+                                  child: Container(
+                                      child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      Image(
+                                        image: AssetImage(
+                                            'images/ic_humidity.png'),
+                                        fit: BoxFit.cover,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.20,
+                                        height:
+                                            MediaQuery.of(context).size.width *
+                                                0.20,
+                                      ),
+                                      currentHumi == ''
+                                          ? Text('습도',
+                                              style: this.boldTextStyle)
+                                          : Text(currentHumi,
+                                              style: this.boldTextStyle),
+                                    ],
+                                  )),
+                                ))
+                          ],
+                        ),
+                      ],
+                    )),
                 Expanded(
                   flex: 1,
                   child: Container(
                       child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      processState == 4 ? Text('연결에 실패했습니다.') : Text(message),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            currentDeviceName + ' ' + _statusText,
+                            style: startTextStyle,
+                          ),
+                          processState == 4
+                              ? Text(
+                                  '연결에 실패했습니다.',
+                                  style: startTextStyle,
+                                )
+                              : Text(message, style: startTextStyle)
+                        ],
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           Container(
-                              width: MediaQuery.of(context).size.width * 0.2,
+                              width: MediaQuery.of(context).size.width * 0.5,
+                              height: MediaQuery.of(context).size.width * 0.15,
                               decoration: BoxDecoration(
                                 border: Border(),
                               ),
                               child: RaisedButton(
-                                padding: EdgeInsets.all(1),
+                                //padding: EdgeInsets.all(1),
                                 onPressed: () async {
+                                  scan();
+                                  currentMode = 'Start';
                                   String checkPermission =
                                       await _checkPermissionCamera();
                                   if (checkPermission == 'Pass') {
                                     String result = await scanner.scan();
-                                    int findIndex = -1;
-                                    for (var i = 0;
-                                        i < deviceList.length;
-                                        i++) {
-                                      if (deviceList[i].deviceName == result) {
-                                        findIndex = i;
-                                        break;
-                                      }
-                                    }
-                                    if (findIndex != -1) {
+
+                                    if (result != '') {
                                       setState(() {
-                                        processState = 2;
+                                        currentDeviceName = result;
                                       });
-                                      connect(findIndex);
-                                    } else {
-                                      setState(() {
-                                        message = '디바이스를 찾을 수 없습니다.';
-                                      });
-                                      for (var i = 0;
-                                          i < deviceList.length;
-                                          i++) {
-                                        if (deviceList[i].deviceName ==
-                                            result) {
-                                          findIndex = i;
-                                          break;
-                                        }
-                                      }
-                                      if (findIndex != -1) {
-                                        deviceList[findIndex]
-                                            .peripheral
-                                            .disconnectOrCancelConnection();
-                                      }
+                                      bool connectResult =
+                                          await startQRroutine(result);
                                     }
                                   }
                                 },
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10))),
+                                // shape: RoundedRectangleBorder(
+                                //     borderRadius:
+                                //         BorderRadius.all(Radius.circular(10))),
                                 color: Color.fromRGBO(22, 33, 55, 1),
                                 child: Container(
                                   child:
-                                      Text('qr기능', style: this.startTextStyle),
+                                      Text('측정 시작', style: this.btnTextStyle),
                                 ),
                               )),
                           Container(
-                              width: MediaQuery.of(context).size.width * 0.20,
+                              width: MediaQuery.of(context).size.width * 0.5,
+                              height: MediaQuery.of(context).size.width * 0.15,
                               decoration: BoxDecoration(
                                 border: Border(),
                               ),
                               child: RaisedButton(
-                                padding: EdgeInsets.all(1),
-                                onPressed: () {
-                                  if (_curPeripheral != null) {
-                                    _curPeripheral
-                                        .disconnectOrCancelConnection();
+                                //padding: EdgeInsets.all(1),
+                                onPressed: () async {
+                                  scan();
+                                  currentMode = 'End';
+                                  String checkPermission =
+                                      await _checkPermissionCamera();
+                                  if (checkPermission == 'Pass') {
+                                    String result = await scanner.scan();
+                                    if (result != '') {
+                                      setState(() {
+                                        currentDeviceName = result;
+                                      });
+                                      await startQRroutine(result);
+                                    }
                                   }
                                 },
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10))),
+                                // shape: RoundedRectangleBorder(
+                                //     borderRadius:
+                                //         BorderRadius.all(Radius.circular(10))),
                                 color: Color.fromRGBO(22, 33, 55, 1),
                                 child: Container(
                                   child:
-                                      Text('연결 끊기', style: this.startTextStyle),
-                                ),
-                              )),
-                          Container(
-                              width: MediaQuery.of(context).size.width * 0.2,
-                              decoration: BoxDecoration(
-                                border: Border(),
-                              ),
-                              child: RaisedButton(
-                                padding: EdgeInsets.all(1),
-                                onPressed: () {
-                                  startBtn();
-                                },
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10))),
-                                color: Color.fromRGBO(22, 33, 55, 1),
-                                child: Container(
-                                  child:
-                                      Text('측정 시작', style: this.startTextStyle),
-                                ),
-                              )),
-                          Container(
-                              width: MediaQuery.of(context).size.width * 0.35,
-                              decoration: BoxDecoration(
-                                border: Border(),
-                              ),
-                              child: RaisedButton(
-                                padding: EdgeInsets.all(1),
-                                onPressed: () {
-                                  getCurrentLocation();
-                                  endBtn();
-                                },
-                                shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(10))),
-                                color: Color.fromRGBO(22, 33, 55, 1),
-                                child: Container(
-                                  child:
-                                      Text('측정 종료', style: this.startTextStyle),
+                                      Text('측정 종료', style: this.btnTextStyle),
                                 ),
                               ))
                         ],
@@ -840,7 +1030,12 @@ class ScanscreenState extends State<Scanscreen> {
   }
 
   TextStyle startTextStyle = TextStyle(
-    fontSize: 17,
+    fontSize: 19,
+    color: Color.fromRGBO(22, 33, 55, 1),
+    fontWeight: FontWeight.w600,
+  );
+  TextStyle btnTextStyle = TextStyle(
+    fontSize: 20,
     color: Color.fromRGBO(255, 255, 255, 1),
     fontWeight: FontWeight.w700,
   );
@@ -912,7 +1107,7 @@ class ScanscreenState extends State<Scanscreen> {
         return;
       }
     }
-
+    print('서비스는사용가능? ');
     _permissionGranted = await location.hasPermission();
     if (_permissionGranted == loc.PermissionStatus.denied) {
       _permissionGranted = await location.requestPermission();
@@ -920,8 +1115,9 @@ class ScanscreenState extends State<Scanscreen> {
         return;
       }
     }
-
+    print('위치받는중? ');
     _locationData = await location.getLocation();
+    print('lat: ' + _locationData.latitude.toString());
     setState(() {
       currentLocation = _locationData;
     });

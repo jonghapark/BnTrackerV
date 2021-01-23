@@ -2,48 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ce6a8b09-0f1c-41f5-bb4c-5cac6dd56314" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/BnrTrackerV/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/ActCheckPermission.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/ActMainBeacon.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/AdapterBleScanDevice.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/AdapterConnectedDevice.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/AdapterDeviceData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/BeaconReferenceApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/BluetoothLeService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/CaptureActivityHandler.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/DialBleQRscan.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/DialBleScan.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/QrCodeActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/RangingActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/SampleGattAttributes.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/camera/AutoFocusCallback.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/camera/CameraConfigurationManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/camera/CameraManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/camera/PreviewCallback.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/data/Common.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/data/DataReceive.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/decode/DecodeHandler.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/decode/DecodeImageCallback.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/decode/DecodeImageThread.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/decode/DecodeManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/decode/DecodeThread.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/decode/FinishListener.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/decode/InactivityTimer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/util/Api.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/util/Base64Support.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/util/Common.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/util/CommonUtil.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/util/MyPreferences.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/util/Util.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/utils/QrUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/utils/ScreenUtils.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/bnrtrackerv/view/QrCodeFinderView.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/issc/data/DeviceInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/issc/data/DeviceInfo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/issc/impl/LeService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/issc/impl/LeService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/issc/util/Util.java" beforeDir="false" afterPath="$PROJECT_DIR$/BnrTrackerV/app/src/main/java/issc/util/Util.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/res/layout/act_main_list.xml" beforeDir="false" afterPath="$PROJECT_DIR$/BnrTrackerV/app/src/main/res/layout/act_main_list.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BnrTrackerV/app/src/main/res/layout/activity_qr_code.xml" beforeDir="false" afterPath="$PROJECT_DIR$/BnrTrackerV/app/src/main/res/layout/activity_qr_code.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/BnTrackerV.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/BnTrackerV.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/android/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/lib/component/screen_scan.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/lib/component/screen_scan.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,6 +27,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="dart.analysis.tool.window.visible" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="show.migrate.to.gradle.popup" value="false" />
   </component>
   <component name="SvnConfiguration">
     <configuration />
