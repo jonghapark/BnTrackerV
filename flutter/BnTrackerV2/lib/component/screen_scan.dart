@@ -225,11 +225,11 @@ class ScanscreenState extends State<Scanscreen> {
 
         //  외부 온도센서 활성화 - 왜 안될까
         //TODO: FIX Point
-        // var values_setTempData = await _curPeripheral.writeCharacteristic(
-        //     'cf08a8c2-485a-4e18-8fe9-018700449787',
-        //     '51186f4c-c8f9-4c67-ac1f-a33ba77eb76b',
-        //     Uint8List.fromList([1]),
-        //     false);
+        var values_setTempData = await _curPeripheral.writeCharacteristic(
+            'cf08a8c2-485a-4e18-8fe9-018700449787',
+            '51186f4c-c8f9-4c67-ac1f-a33ba77eb76b',
+            Uint8List.fromList([1]),
+            false);
 
         //  데이터 읽기
         //  인덱스 설정
@@ -237,11 +237,11 @@ class ScanscreenState extends State<Scanscreen> {
         //  print(Uint8List.fromList([2, 0]));
         // 측정시작 명령어
         //TODO: FIX Point
-        // await _curPeripheral.writeCharacteristic(
-        //     'cf08a8c2-485a-4e18-8fe9-018700449787',
-        //     '705ec125-966d-4275-bd80-a1b2a8bc28d6',
-        //     Uint8List.fromList([1]),
-        //     false);
+        await _curPeripheral.writeCharacteristic(
+            'cf08a8c2-485a-4e18-8fe9-018700449787',
+            '705ec125-966d-4275-bd80-a1b2a8bc28d6',
+            Uint8List.fromList([1]),
+            false);
 
         // //설정 종료
         await _curPeripheral.writeCharacteristic(
@@ -270,11 +270,11 @@ class ScanscreenState extends State<Scanscreen> {
       message = '데이터를 읽어오고 있습니다.';
     });
     //TODO: FIX Point
-    // await _curPeripheral.writeCharacteristic(
-    //     'cf08a8c2-485a-4e18-8fe9-018700449787',
-    //     '705ec125-966d-4275-bd80-a1b2a8bc28d6',
-    //     Uint8List.fromList([0]),
-    //     false);
+    await _curPeripheral.writeCharacteristic(
+        'cf08a8c2-485a-4e18-8fe9-018700449787',
+        '705ec125-966d-4275-bd80-a1b2a8bc28d6',
+        Uint8List.fromList([0]),
+        false);
 
     var values_tempreadDataResult = await _curPeripheral.readCharacteristic(
         'a2fac1f4-dd28-4e5a-ac2d-4d6e2cb410f9',
@@ -726,7 +726,9 @@ class ScanscreenState extends State<Scanscreen> {
       }
 
       //연결 시작!
-      await peripheral.connect().then((_) {
+      await peripheral
+          .connect(isAutoConnect: true, refreshGatt: true)
+          .then((_) {
         this._curPeripheral = peripheral;
         //연결이 되면 장치의 모든 서비스와 캐릭터리스틱을 검색한다.
         peripheral

@@ -4,10 +4,7 @@
     <list default="true" id="ce6a8b09-0f1c-41f5-bb4c-5cac6dd56314" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/BnTrackerV.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/BnTrackerV.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/android/app/src/main/AndroidManifest.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/lib/component/screen_scan.dart" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/lib/component/screen_scan.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/flutter/BnTrackerV2/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,5 +38,16 @@
       <updated>1610872844681</updated>
     </task>
     <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="java-line">
+          <url>file://$PROJECT_DIR$/BnrTrackerV/app/src/main/java/co/kr/bnr/opbt/ActMainBeacon.java</url>
+          <line>1480</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
