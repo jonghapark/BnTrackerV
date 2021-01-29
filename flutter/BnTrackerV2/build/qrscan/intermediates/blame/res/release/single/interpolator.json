@@ -1,0 +1,46 @@
+[
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/mtrl_linear_out_slow_in.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/db2388f0fe5e05a7a168e5a9c11e912f/material-1.0.0/res/interpolator/mtrl_linear_out_slow_in.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/mtrl_linear.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/db2388f0fe5e05a7a168e5a9c11e912f/material-1.0.0/res/interpolator/mtrl_linear.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/btn_radio_to_on_mtrl_animation_interpolator_0.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/7def8d6c3751559765cf68c2d5a2dddd/appcompat-1.1.0/res/interpolator/btn_radio_to_on_mtrl_animation_interpolator_0.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/btn_radio_to_off_mtrl_animation_interpolator_0.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/7def8d6c3751559765cf68c2d5a2dddd/appcompat-1.1.0/res/interpolator/btn_radio_to_off_mtrl_animation_interpolator_0.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/mtrl_fast_out_slow_in.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/db2388f0fe5e05a7a168e5a9c11e912f/material-1.0.0/res/interpolator/mtrl_fast_out_slow_in.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/btn_checkbox_checked_mtrl_animation_interpolator_1.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/7def8d6c3751559765cf68c2d5a2dddd/appcompat-1.1.0/res/interpolator/btn_checkbox_checked_mtrl_animation_interpolator_1.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/btn_checkbox_unchecked_mtrl_animation_interpolator_0.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/7def8d6c3751559765cf68c2d5a2dddd/appcompat-1.1.0/res/interpolator/btn_checkbox_unchecked_mtrl_animation_interpolator_0.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/mtrl_fast_out_linear_in.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/db2388f0fe5e05a7a168e5a9c11e912f/material-1.0.0/res/interpolator/mtrl_fast_out_linear_in.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/btn_checkbox_checked_mtrl_animation_interpolator_0.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/7def8d6c3751559765cf68c2d5a2dddd/appcompat-1.1.0/res/interpolator/btn_checkbox_checked_mtrl_animation_interpolator_0.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/btn_checkbox_unchecked_mtrl_animation_interpolator_1.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/7def8d6c3751559765cf68c2d5a2dddd/appcompat-1.1.0/res/interpolator/btn_checkbox_unchecked_mtrl_animation_interpolator_1.xml"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/interpolator/fast_out_slow_in.xml",
+        "source": "/Users/jjongsworld/.gradle/caches/transforms-2/files-2.1/7def8d6c3751559765cf68c2d5a2dddd/appcompat-1.1.0/res/interpolator/fast_out_slow_in.xml"
+    }
+]

@@ -40,7 +40,8 @@ public class Common {
 
     public static final int REQUEST_CODE_TRACKING_ALARAM = 1000;
 
-    public static final String SERVER_URL_API ="http://bnrtracker.dreammug.com/_API/";
+    //public static final String SERVER_URL_API ="http://bnrtracker.dreammug.com/_API/";
+    public static final String SERVER_URL_API ="http:175.126.232.236/_API/";
     public static final int MILLISECOND_FOR_UPDATE_MINUTE_FOR_TEST = 1 * 60 * 1000;
     public static final int MILLISECOND_FOR_UPDATE_MINUTE = 10 * 60 * 1000;
 

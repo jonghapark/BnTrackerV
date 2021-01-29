@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/mipmap-xxhdpi-v4/ic_photo.png",
+        "source": "/Users/jjongsworld/Downloads/flutter/.pub-cache/hosted/pub.dartlang.org/qrscan-0.2.21/android/src/main/res/mipmap-xxhdpi/ic_photo.png"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/mipmap-xxhdpi-v4/ic_launcher.png",
+        "source": "/Users/jjongsworld/Downloads/flutter/.pub-cache/hosted/pub.dartlang.org/qrscan-0.2.21/android/src/main/res/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/mipmap-xxhdpi-v4/ic_light.png",
+        "source": "/Users/jjongsworld/Downloads/flutter/.pub-cache/hosted/pub.dartlang.org/qrscan-0.2.21/android/src/main/res/mipmap-xxhdpi/ic_light.png"
+    },
+    {
+        "merged": "/Users/jjongsworld/Documents/GitHub/BnTrackerV/flutter/BnTrackerV2/build/qrscan/intermediates/res/merged/release/mipmap-xxhdpi-v4/ic_back.png",
+        "source": "/Users/jjongsworld/Downloads/flutter/.pub-cache/hosted/pub.dartlang.org/qrscan-0.2.21/android/src/main/res/mipmap-xxhdpi/ic_back.png"
+    }
+]
